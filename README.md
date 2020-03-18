@@ -2,7 +2,7 @@
 
 This action adds a given label to Pull Requests that have merge conflicts and removes a given label from these pull requests
 
-![label lifecycle: open (no label), push to master -> merge conflict -> label: PR needs rebase -> resolve conflicts on PR -> remove label: PR needs rebase](https://raw.githubusercontent.com/eps1lon/actions-label-merge-conflict/docs/rationale/label-lifecycle.png).
+![label lifecycle: open (no label), push to master -> merge conflict -> label: PR needs rebase -> resolve conflicts on PR -> remove label: PR needs rebase](https://raw.githubusercontent.com/eps1lon/actions-label-merge-conflict/master/label-lifecycle.png).
 
 ## Why?
 
