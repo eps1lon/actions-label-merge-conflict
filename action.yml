@@ -1,0 +1,16 @@
+name: "Check dirty PRs"
+description: 'Automatically merges PR that are labelled appropriately and "clean"'
+author: "Material-UI team"
+inputs:
+  repoToken:
+    description: "Token for the repository. Can be passed in using {{ secrets.GITHUB_TOKEN }}"
+    required: true
+  dirtyLabel:
+    description: "Name of the label which indicates that the branch is dirty"
+    required: true
+  removeOnDirtyLabel:
+    description: "Name of the label which should be removed"
+    required: true
+runs:
+  using: "node12"
+  main: "dist/index.js"
