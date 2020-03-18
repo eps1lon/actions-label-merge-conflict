@@ -19,7 +19,7 @@ jobs:
       - name: Build
         run: yarn build
       - name: Checked in build?
-        run: git diff --exit-
+        run: git diff --exit-code
       - name: Test
         uses: "./"
         with:
