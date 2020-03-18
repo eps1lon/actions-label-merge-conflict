@@ -22,7 +22,9 @@ jobs:
         run: git diff --exit-code
       # tried to use https://github.community/t5/GitHub-Actions/Usage-of-expressions-and-contexts-in-uses-clause/m-p/39507/highlight/false#M3837
       # but doesn't seem to work
-      - name: Test (ignored)
+      - name: Test (PR)
+        # Add your repository and branch here to test your changes
+        # e.g. eps1lon/actions-label-merge-conflict@feat/retry-unknown
         uses: ./
         with:
           dirtyLabel: "PR: needs rebase"

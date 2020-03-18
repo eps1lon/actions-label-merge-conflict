@@ -8660,13 +8660,19 @@ function main() {
             client,
             dirtyLabel,
             removeOnDirtyLabel,
-            after: null
+            after: null,
+            retryAfter: 60,
+            retryMax: 3
         });
     });
 }
 function checkDirty(context) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { after, client, dirtyLabel, removeOnDirtyLabel } = context;
+        const { after, client, dirtyLabel, removeOnDirtyLabel, retryAfter, retryMax } = context;
+        if (retryMax <= 0) {
+            core.warning("reached maximum allowed retries");
+            return;
+        }
         const query = `
 query openPullRequests($owner: String!, $repo: String!, $after: String) { 
   repository(owner:$owner, name: $repo) { 
@@ -8723,7 +8729,13 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
                     // So we basically require a manual review pass after rebase.
                     break;
                 case "UNKNOWN":
-                    info(`do nothing`);
+                    info(`Retrying after ${retryAfter}s.`);
+                    return new Promise(resolve => {
+                        setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+                            core.info(`retrying with ${retryMax} retries remaining.`);
+                            resolve(yield checkDirty(Object.assign(Object.assign({}, context), { retryMax: retryMax - 1 })));
+                        }));
+                    });
                     break;
                 default:
                     throw new TypeError(`unhandled mergeable state '${pullRequest.mergeable}'`);

@@ -14,7 +14,9 @@ async function main() {
 		client,
 		dirtyLabel,
 		removeOnDirtyLabel,
-		after: null
+		after: null,
+		retryAfter: 60,
+		retryMax: 3
 	});
 }
 
@@ -23,9 +25,28 @@ interface CheckDirtyContext {
 	client: github.GitHub;
 	dirtyLabel: string;
 	removeOnDirtyLabel: string;
+	/**
+	 * number of seconds after which the mergable state is re-checked
+	 * if it is unknown
+	 */
+	retryAfter: number;
+	// number of allowed retries
+	retryMax: number;
 }
 async function checkDirty(context: CheckDirtyContext): Promise<void> {
-	const { after, client, dirtyLabel, removeOnDirtyLabel } = context;
+	const {
+		after,
+		client,
+		dirtyLabel,
+		removeOnDirtyLabel,
+		retryAfter,
+		retryMax
+	} = context;
+
+	if (retryMax <= 0) {
+		core.warning("reached maximum allowed retries");
+		return;
+	}
 
 	interface RepositoryResponse {
 		repository: any;
@@ -96,7 +117,13 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 				// So we basically require a manual review pass after rebase.
 				break;
 			case "UNKNOWN":
-				info(`do nothing`);
+				info(`Retrying after ${retryAfter}s.`);
+				return new Promise(resolve => {
+					setTimeout(async () => {
+						core.info(`retrying with ${retryMax} retries remaining.`);
+						resolve(await checkDirty({ ...context, retryMax: retryMax - 1 }));
+					});
+				});
 				break;
 			default:
 				throw new TypeError(
