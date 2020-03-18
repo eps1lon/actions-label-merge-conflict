@@ -1,4 +1,4 @@
-# label merge-conflict action
+# label merge-conflict action 1
 
 This action adds a given label to Pull Requests that have merge conflicts and removes a given label from these pull requests
 
