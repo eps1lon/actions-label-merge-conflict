@@ -1,6 +1,5 @@
-name: "Check dirty PRs"
-description: 'Automatically merges PR that are labelled appropriately and "clean"'
-author: "Material-UI team"
+name: "Label Conflicting Pull Requests"
+description: "This action adds a given label to Pull Requests that have merge conflicts and removes a given label from these pull requests"
 inputs:
   repoToken:
     description: "Token for the repository. Can be passed in using {{ secrets.GITHUB_TOKEN }}"
@@ -14,3 +13,7 @@ inputs:
 runs:
   using: "node12"
   main: "dist/index.js"
+author: "Sebastian Silbermann"
+branding:
+  icon: "activity"
+  color: "black"
