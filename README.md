@@ -12,7 +12,7 @@ This actions achieve this with minimal noise (no comment bloat) by adding a labe
 
 ### Motivation
 
-- [Notify when merge conflict arises](https://github.com/isaacs/github/issues/224)
+- [isaacs/github#224: Notify when merge conflict arises](https://github.com/isaacs/github/issues/224)
 
 ## Inputs
 
