@@ -21,7 +21,7 @@ jobs:
       - name: Checked in build?
         run: git diff --exit-code
       - name: Test
-        uses: "."
+        uses: "actions/setup-node@${{github.sha}}"
         with:
           dirtyLabel: "PR: needs rebase"
           removeOnDirtyLabel: "PR: ready to ship"
