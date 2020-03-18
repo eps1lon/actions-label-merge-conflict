@@ -8711,13 +8711,6 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
         for (const pullRequest of pullRequests) {
             core.debug(JSON.stringify(pullRequest, null, 2));
             const info = (message) => core.info(`for PR "${pullRequest.title}": ${message}`);
-            core.info(`Retrying after ${retryAfter}s.`);
-            return new Promise(resolve => {
-                setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-                    core.info(`retrying with ${retryMax} retries remaining.`);
-                    resolve(yield checkDirty(Object.assign(Object.assign({}, context), { retryMax: retryMax - 1 })));
-                }));
-            });
             switch (pullRequest.mergeable) {
                 case "CONFLICTING":
                     info(`add "${dirtyLabel}", remove "${removeOnDirtyLabel}"`);
@@ -8736,7 +8729,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
                     // So we basically require a manual review pass after rebase.
                     break;
                 case "UNKNOWN":
-                    core.info(`Retrying after ${retryAfter}s.`);
+                    info(`Retrying after ${retryAfter}s.`);
                     return new Promise(resolve => {
                         setTimeout(() => __awaiter(this, void 0, void 0, function* () {
                             core.info(`retrying with ${retryMax} retries remaining.`);
