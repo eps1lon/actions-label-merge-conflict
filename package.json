@@ -2,6 +2,7 @@
 	"name": "actions-label-merge-conflict",
 	"license": "MIT",
 	"main": "dist/index.js",
+	"private": true,
 	"version": "1.0.0",
 	"scripts": {
 		"build": "ncc build sources/main.ts",
