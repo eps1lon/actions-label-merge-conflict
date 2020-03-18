@@ -10,6 +10,10 @@ PRs are usually open for a few days until a maintainer can take a look. When thi
 
 This actions achieve this with minimal noise (no comment bloat) by adding a label to a PR if it has merge conflicts. This triggers a "state change" notification in GitHub and the author can resolve the conflicts before the maintainer looked at a PR. At the same time the maintainer has a simple filter out PRs that have merge conflicts.
 
+### Motivation
+
+- [Notify when merge conflict arises](https://github.com/isaacs/github/issues/224)
+
 ## Inputs
 
 ### `dirtyLabel`
