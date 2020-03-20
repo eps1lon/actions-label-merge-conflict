@@ -7,6 +7,8 @@ async function main() {
 	const removeOnDirtyLabel = core.getInput("removeOnDirtyLabel", {
 		required: true
 	});
+	const retryAfter = parseInt(core.getInput("retryAfter") ?? 120, 10);
+	const retryMax = parseInt(core.getInput("retryMax") ?? 5, 10);
 
 	const client = new github.GitHub(repoToken);
 
@@ -15,8 +17,8 @@ async function main() {
 		dirtyLabel,
 		removeOnDirtyLabel,
 		after: null,
-		retryAfter: 60,
-		retryMax: 3
+		retryAfter,
+		retryMax
 	});
 }
 

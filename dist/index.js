@@ -8649,20 +8649,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
 function main() {
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         const repoToken = core.getInput("repoToken", { required: true });
         const dirtyLabel = core.getInput("dirtyLabel", { required: true });
         const removeOnDirtyLabel = core.getInput("removeOnDirtyLabel", {
             required: true
         });
+        const retryAfter = parseInt((_a = core.getInput("retryAfter")) !== null && _a !== void 0 ? _a : 120, 10);
+        const retryMax = parseInt((_b = core.getInput("retryMax")) !== null && _b !== void 0 ? _b : 5, 10);
         const client = new github.GitHub(repoToken);
         return yield checkDirty({
             client,
             dirtyLabel,
             removeOnDirtyLabel,
             after: null,
-            retryAfter: 60,
-            retryMax: 3
+            retryAfter,
+            retryMax
         });
     });
 }
