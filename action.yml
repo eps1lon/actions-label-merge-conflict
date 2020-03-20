@@ -10,6 +10,10 @@ inputs:
   removeOnDirtyLabel:
     description: "Name of the label which should be removed"
     required: true
+  retryAfter:
+    description: "Number of seconds after which the action runs again if the mergable state is unknown."
+  retryMax:
+    description: "Number of times the action retries calculating the mergable state"
 runs:
   using: "node12"
   main: "dist/index.js"

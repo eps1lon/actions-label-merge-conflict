@@ -28,6 +28,18 @@ This actions achieve this with minimal noise (no comment bloat) by adding a labe
 
 **Required** Token for the repository. Can be passed in using {{ secrets.GITHUB_TOKEN }}
 
+### `retryAfter`
+
+Number of seconds after which the mergable state is checked again if it is unknown (GitHub is still calculating it).
+
+**Default**: 120
+
+### `retryMax`
+
+Number of times the script will check the mergable state aigain. After that it will print a warning.
+
+**Default**: 5
+
 ## Example usage
 
 ```yaml
@@ -37,7 +49,7 @@ on:
   push:
   # So that the `dirtyLabel` is removed if conflicts are resolved
   # WARNING: PRs from forks don't have access to screts.
-  # You might want to skip this action on pull_requests which means 
+  # You might want to skip this action on pull_requests which means
   # the label might not reflect the current state of the PR until
   # another push on `master`
   pull_request:
