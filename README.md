@@ -36,6 +36,10 @@ on:
   # So that PRs touching the same files as the push are updated
   push:
   # So that the `dirtyLabel` is removed if conflicts are resolved
+  # WARNING: PRs from forks don't have access to screts.
+  # You might want to skip this action on pull_requests which means 
+  # the label might not reflect the current state of the PR until
+  # another push on `master`
   pull_request:
     types: [synchronize]
 
