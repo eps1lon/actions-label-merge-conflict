@@ -7,7 +7,6 @@ async function main() {
 	const removeOnDirtyLabel = core.getInput("removeOnDirtyLabel", {
 		required: true
 	});
-
 	const retryAfter = parseInt(core.getInput("retryAfter") || "120", 10);
 	const retryMax = parseInt(core.getInput("retryMax") || "5", 10);
 
