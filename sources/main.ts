@@ -124,7 +124,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 					setTimeout(async () => {
 						core.info(`retrying with ${retryMax} retries remaining.`);
 						resolve(await checkDirty({ ...context, retryMax: retryMax - 1 }));
-					});
+					}, retryAfter * 1000);
 				});
 				break;
 			default:
