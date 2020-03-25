@@ -106,7 +106,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 				info(`add "${dirtyLabel}", remove "${removeOnDirtyLabel}"`);
 				// for labels PRs and issues are the same
 				await Promise.all([
-					addLabel(dirtyLabel, pullRequest, { client }),
+					addLabelIfNotExists(dirtyLabel, pullRequest, { client }),
 					removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
 				]);
 				break;
@@ -142,12 +142,34 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 	}
 }
 
-function addLabel(
+/**
+ * Assumes that the issue exists
+ */
+async function addLabelIfNotExists(
 	label: string,
 	{ number }: { number: number },
 	{ client }: { client: github.GitHub }
 ) {
-	return client.issues
+	const { data: issue } = await client.issues.get({
+		owner: github.context.repo.owner,
+		repo: github.context.repo.repo,
+		issue_number: number
+	});
+
+	core.debug(JSON.stringify(issue, null, 2));
+
+	const hasLabel =
+		issue.labels.find(issueLabel => {
+			return issueLabel.name === label;
+		}) !== undefined;
+
+	core.info(`Issue #${number} already has label '${label}'. Skipping.`);
+
+	if (hasLabel) {
+		return;
+	}
+
+	await client.issues
 		.addLabels({
 			owner: github.context.repo.owner,
 			repo: github.context.repo.repo,

@@ -8718,7 +8718,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
                     info(`add "${dirtyLabel}", remove "${removeOnDirtyLabel}"`);
                     // for labels PRs and issues are the same
                     yield Promise.all([
-                        addLabel(dirtyLabel, pullRequest, { client }),
+                        addLabelIfNotExists(dirtyLabel, pullRequest, { client }),
                         removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
                     ]);
                     break;
@@ -8748,16 +8748,34 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
         }
     });
 }
-function addLabel(label, { number }, { client }) {
-    return client.issues
-        .addLabels({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        issue_number: number,
-        labels: [label]
-    })
-        .catch(error => {
-        throw new Error(`error adding "${label}": ${error}`);
+/**
+ * Assumes that the issue exists
+ */
+function addLabelIfNotExists(label, { number }, { client }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { data: issue } = yield client.issues.get({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            issue_number: number
+        });
+        core.debug(JSON.stringify(issue, null, 2));
+        const hasLabel = issue.labels.find(issueLabel => {
+            return issueLabel.name === label;
+        }) !== undefined;
+        core.info(`Issue #${number} already has label '${label}'. Skipping.`);
+        if (hasLabel) {
+            return;
+        }
+        yield client.issues
+            .addLabels({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            issue_number: number,
+            labels: [label]
+        })
+            .catch(error => {
+            throw new Error(`error adding "${label}": ${error}`);
+        });
     });
 }
 function removeLabelIfExists(label, { number }, { client }) {
