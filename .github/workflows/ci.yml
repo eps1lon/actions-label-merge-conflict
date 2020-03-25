@@ -30,7 +30,7 @@ jobs:
       - name: Test (PR)
         # Add your repository and branch here to test your changes
         # e.g. eps1lon/actions-label-merge-conflict@feat/retry-unknown
-        uses: eps1lon/actions-label-merge-conflict@fix/update-too-often
+        uses: ./
         with:
           dirtyLabel: "PR: needs rebase"
           removeOnDirtyLabel: "PR: ready to ship"
