@@ -156,10 +156,14 @@ async function addLabelIfNotExists(
 		issue_number: number
 	});
 
+	core.debug(JSON.stringify(issue, null, 2));
+
 	const hasLabel =
 		issue.labels.find(issueLabel => {
 			return issueLabel.name === label;
 		}) !== undefined;
+
+	core.info(`Issue #${number} already has label '${label}'. Skipping.`);
 
 	if (hasLabel) {
 		return;
