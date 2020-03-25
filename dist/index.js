@@ -8736,7 +8736,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
                         setTimeout(() => __awaiter(this, void 0, void 0, function* () {
                             core.info(`retrying with ${retryMax} retries remaining.`);
                             resolve(yield checkDirty(Object.assign(Object.assign({}, context), { retryMax: retryMax - 1 })));
-                        }));
+                        }), retryAfter * 1000);
                     });
                     break;
                 default:
