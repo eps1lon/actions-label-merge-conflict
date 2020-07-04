@@ -1,6 +1,8 @@
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 
+type GitHub = ReturnType<typeof github.getOctokit>;
+
 async function main() {
 	const repoToken = core.getInput("repoToken", { required: true });
 	const dirtyLabel = core.getInput("dirtyLabel", { required: true });
@@ -10,7 +12,7 @@ async function main() {
 	const retryAfter = parseInt(core.getInput("retryAfter") || "120", 10);
 	const retryMax = parseInt(core.getInput("retryMax") || "5", 10);
 
-	const client = new github.GitHub(repoToken);
+	const client = github.getOctokit(repoToken);
 
 	return await checkDirty({
 		client,
@@ -24,7 +26,7 @@ async function main() {
 
 interface CheckDirtyContext {
 	after: string | null;
-	client: github.GitHub;
+	client: GitHub;
 	dirtyLabel: string;
 	removeOnDirtyLabel: string;
 	/**
@@ -148,7 +150,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 async function addLabelIfNotExists(
 	label: string,
 	{ number }: { number: number },
-	{ client }: { client: github.GitHub }
+	{ client }: { client: GitHub }
 ) {
 	const { data: issue } = await client.issues.get({
 		owner: github.context.repo.owner,
@@ -184,7 +186,7 @@ async function addLabelIfNotExists(
 function removeLabelIfExists(
 	label: string,
 	{ number }: { number: number },
-	{ client }: { client: github.GitHub }
+	{ client }: { client: GitHub }
 ) {
 	return client.issues
 		.removeLabel({
