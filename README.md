@@ -2,7 +2,7 @@
 
 This action adds a given label to Pull Requests that have merge conflicts and removes a given label from these pull requests
 
-![label lifecycle: open (no label), push to master -> merge conflict -> label: PR needs rebase -> resolve conflicts on PR -> remove label: PR needs rebase](https://raw.githubusercontent.com/eps1lon/actions-label-merge-conflict/master/label-lifecycle.png).
+![label lifecycle: open (no label), push to main -> merge conflict -> label: PR needs rebase -> resolve conflicts on PR -> remove label: PR needs rebase](https://raw.githubusercontent.com/eps1lon/actions-label-merge-conflict/main/label-lifecycle.png).
 
 ## Why?
 
@@ -51,7 +51,7 @@ on:
   # WARNING: PRs from forks don't have access to screts.
   # You might want to skip this action on pull_requests which means
   # the label might not reflect the current state of the PR until
-  # another push on `master`
+  # another push on `main`
   pull_request:
     types: [synchronize]
 

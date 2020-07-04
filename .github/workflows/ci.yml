@@ -36,7 +36,7 @@ jobs:
           removeOnDirtyLabel: "PR: ready to ship"
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
       - name: Test
-        uses: eps1lon/actions-label-merge-conflict@master
+        uses: eps1lon/actions-label-merge-conflict@main
         with:
           dirtyLabel: "PR: needs rebase"
           removeOnDirtyLabel: "PR: ready to ship"
