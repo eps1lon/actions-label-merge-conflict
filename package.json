@@ -12,7 +12,7 @@
 		"@actions/core": "^1.2.3",
 		"@actions/github": "^2.1.1",
 		"@zeit/ncc": "^0.21.1",
-		"prettier": "^1.19.1",
+		"prettier": "^2.0.5",
 		"typescript": "^3.8.3"
 	},
 	"prettier": {
