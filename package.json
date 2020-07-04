@@ -11,7 +11,7 @@
 	"devDependencies": {
 		"@actions/core": "^1.2.3",
 		"@actions/github": "^2.1.1",
-		"@zeit/ncc": "^0.21.1",
+		"@zeit/ncc": "^0.22.3",
 		"prettier": "^2.0.5",
 		"typescript": "^3.9.6"
 	},
