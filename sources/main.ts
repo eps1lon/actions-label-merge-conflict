@@ -5,7 +5,7 @@ async function main() {
 	const repoToken = core.getInput("repoToken", { required: true });
 	const dirtyLabel = core.getInput("dirtyLabel", { required: true });
 	const removeOnDirtyLabel = core.getInput("removeOnDirtyLabel", {
-		required: true
+		required: true,
 	});
 	const retryAfter = parseInt(core.getInput("retryAfter") || "120", 10);
 	const retryMax = parseInt(core.getInput("retryMax") || "5", 10);
@@ -18,7 +18,7 @@ async function main() {
 		removeOnDirtyLabel,
 		after: null,
 		retryAfter,
-		retryMax
+		retryMax,
 	});
 }
 
@@ -42,7 +42,7 @@ async function checkDirty(context: CheckDirtyContext): Promise<void> {
 		dirtyLabel,
 		removeOnDirtyLabel,
 		retryAfter,
-		retryMax
+		retryMax,
 	} = context;
 
 	if (retryMax <= 0) {
@@ -81,13 +81,13 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 		},
 		after,
 		owner: github.context.repo.owner,
-		repo: github.context.repo.repo
+		repo: github.context.repo.repo,
 	});
 
 	const {
 		repository: {
-			pullRequests: { nodes: pullRequests, pageInfo }
-		}
+			pullRequests: { nodes: pullRequests, pageInfo },
+		},
 	} = pullsResponse as RepositoryResponse;
 	core.debug(JSON.stringify(pullsResponse, null, 2));
 
@@ -107,7 +107,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 				// for labels PRs and issues are the same
 				await Promise.all([
 					addLabelIfNotExists(dirtyLabel, pullRequest, { client }),
-					removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
+					removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client }),
 				]);
 				break;
 			case "MERGEABLE":
@@ -120,7 +120,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 				break;
 			case "UNKNOWN":
 				info(`Retrying after ${retryAfter}s.`);
-				return new Promise(resolve => {
+				return new Promise((resolve) => {
 					setTimeout(async () => {
 						core.info(`retrying with ${retryMax} retries remaining.`);
 						resolve(await checkDirty({ ...context, retryMax: retryMax - 1 }));
@@ -137,7 +137,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 	if (pageInfo.hasNextPage) {
 		return checkDirty({
 			...context,
-			after: pageInfo.endCursor
+			after: pageInfo.endCursor,
 		});
 	}
 }
@@ -153,13 +153,13 @@ async function addLabelIfNotExists(
 	const { data: issue } = await client.issues.get({
 		owner: github.context.repo.owner,
 		repo: github.context.repo.repo,
-		issue_number: number
+		issue_number: number,
 	});
 
 	core.debug(JSON.stringify(issue, null, 2));
 
 	const hasLabel =
-		issue.labels.find(issueLabel => {
+		issue.labels.find((issueLabel) => {
 			return issueLabel.name === label;
 		}) !== undefined;
 
@@ -174,9 +174,9 @@ async function addLabelIfNotExists(
 			owner: github.context.repo.owner,
 			repo: github.context.repo.repo,
 			issue_number: number,
-			labels: [label]
+			labels: [label],
 		})
-		.catch(error => {
+		.catch((error) => {
 			throw new Error(`error adding "${label}": ${error}`);
 		});
 }
@@ -191,9 +191,9 @@ function removeLabelIfExists(
 			owner: github.context.repo.owner,
 			repo: github.context.repo.repo,
 			issue_number: number,
-			name: label
+			name: label,
 		})
-		.catch(error => {
+		.catch((error) => {
 			if (error.status !== 404) {
 				throw new Error(`error removing "${label}": ${error}`);
 			} else {
@@ -204,7 +204,7 @@ function removeLabelIfExists(
 		});
 }
 
-main().catch(error => {
+main().catch((error) => {
 	core.error(String(error));
 	core.setFailed(String(error.message));
 });
