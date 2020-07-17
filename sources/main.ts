@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 
 type GitHub = ReturnType<typeof github.getOctokit>;
+const isPrDirtyOutputKey = `isPrDirty`;
 
 async function main() {
 	const repoToken = core.getInput("repoToken", { required: true });
@@ -14,7 +15,7 @@ async function main() {
 
 	const client = github.getOctokit(repoToken);
 
-	return await checkDirty({
+	await checkDirty({
 		client,
 		dirtyLabel,
 		removeOnDirtyLabel,
@@ -111,6 +112,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 					addLabelIfNotExists(dirtyLabel, pullRequest, { client }),
 					removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client }),
 				]);
+				core.setOutput(isPrDirtyOutputKey, true);
 				break;
 			case "MERGEABLE":
 				info(`remove "${dirtyLabel}"`);
@@ -119,10 +121,12 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 				// we don't add it again because we assume that the removeOnDirtyLabel
 				// is used to mark a PR as "merge!".
 				// So we basically require a manual review pass after rebase.
+				core.setOutput(isPrDirtyOutputKey, false);
 				break;
 			case "UNKNOWN":
 				info(`Retrying after ${retryAfter}s.`);
-				return new Promise((resolve) => {
+				core.setOutput(isPrDirtyOutputKey, false);
+				await new Promise((resolve) => {
 					setTimeout(async () => {
 						core.info(`retrying with ${retryMax} retries remaining.`);
 						resolve(await checkDirty({ ...context, retryMax: retryMax - 1 }));
@@ -137,7 +141,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 	}
 
 	if (pageInfo.hasNextPage) {
-		return checkDirty({
+		await checkDirty({
 			...context,
 			after: pageInfo.endCursor,
 		});

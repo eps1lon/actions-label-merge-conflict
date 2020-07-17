@@ -14,6 +14,9 @@ inputs:
     description: "Number of seconds after which the action runs again if the mergable state is unknown."
   retryMax:
     description: "Number of times the action retries calculating the mergable state"
+ouputs:
+  isPrDirty:
+    description: "(boolean) Whether the PR is dirty or not"
 runs:
   using: "node12"
   main: "dist/index.js"
