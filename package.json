@@ -13,7 +13,7 @@
 		"@actions/github": "^4.0.0",
 		"@zeit/ncc": "^0.22.3",
 		"prettier": "^2.0.5",
-		"typescript": "^3.9.6"
+		"typescript": "^3.9.7"
 	},
 	"prettier": {
 		"useTabs": true
