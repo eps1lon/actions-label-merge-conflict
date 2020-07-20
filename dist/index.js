@@ -7586,6 +7586,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
+const prDirtyStatusesOutputKey = `prDirtyStatuses`;
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const repoToken = core.getInput("repoToken", { required: true });
@@ -7596,7 +7597,7 @@ function main() {
         const retryAfter = parseInt(core.getInput("retryAfter") || "120", 10);
         const retryMax = parseInt(core.getInput("retryMax") || "5", 10);
         const client = github.getOctokit(repoToken);
-        return yield checkDirty({
+        yield checkDirty({
             client,
             dirtyLabel,
             removeOnDirtyLabel,
@@ -7611,7 +7612,7 @@ function checkDirty(context) {
         const { after, client, dirtyLabel, removeOnDirtyLabel, retryAfter, retryMax, } = context;
         if (retryMax <= 0) {
             core.warning("reached maximum allowed retries");
-            return;
+            return {};
         }
         const query = `
 query openPullRequests($owner: String!, $repo: String!, $after: String) { 
@@ -7646,8 +7647,9 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
         const { repository: { pullRequests: { nodes: pullRequests, pageInfo }, }, } = pullsResponse;
         core.debug(JSON.stringify(pullsResponse, null, 2));
         if (pullRequests.length === 0) {
-            return;
+            return {};
         }
+        let dirtyStatuses = {};
         for (const pullRequest of pullRequests) {
             core.debug(JSON.stringify(pullRequest, null, 2));
             const info = (message) => core.info(`for PR "${pullRequest.title}": ${message}`);
@@ -7659,6 +7661,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
                         addLabelIfNotExists(dirtyLabel, pullRequest, { client }),
                         removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client }),
                     ]);
+                    dirtyStatuses[pullRequest.number] = true;
                     break;
                 case "MERGEABLE":
                     info(`remove "${dirtyLabel}"`);
@@ -7667,14 +7670,17 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
                     // we don't add it again because we assume that the removeOnDirtyLabel
                     // is used to mark a PR as "merge!".
                     // So we basically require a manual review pass after rebase.
+                    dirtyStatuses[pullRequest.number] = false;
                     break;
                 case "UNKNOWN":
                     info(`Retrying after ${retryAfter}s.`);
-                    return new Promise((resolve) => {
-                        setTimeout(() => __awaiter(this, void 0, void 0, function* () {
+                    yield new Promise((resolve) => {
+                        setTimeout(() => {
                             core.info(`retrying with ${retryMax} retries remaining.`);
-                            resolve(yield checkDirty(Object.assign(Object.assign({}, context), { retryMax: retryMax - 1 })));
-                        }), retryAfter * 1000);
+                            resolve(() => __awaiter(this, void 0, void 0, function* () {
+                                dirtyStatuses = Object.assign(Object.assign({}, dirtyStatuses), (yield checkDirty(Object.assign(Object.assign({}, context), { retryMax: retryMax - 1 }))));
+                            }));
+                        }, retryAfter * 1000);
                     });
                     break;
                 default:
@@ -7682,8 +7688,12 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
             }
         }
         if (pageInfo.hasNextPage) {
-            return checkDirty(Object.assign(Object.assign({}, context), { after: pageInfo.endCursor }));
+            dirtyStatuses = Object.assign(Object.assign({}, dirtyStatuses), (yield checkDirty(Object.assign(Object.assign({}, context), { after: pageInfo.endCursor }))));
         }
+        else {
+            core.setOutput(prDirtyStatusesOutputKey, dirtyStatuses);
+        }
+        return dirtyStatuses;
     });
 }
 /**
