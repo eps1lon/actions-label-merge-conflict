@@ -15,8 +15,8 @@ inputs:
   retryMax:
     description: "Number of times the action retries calculating the mergable state"
 ouputs:
-  isPrDirty:
-    description: "(boolean) Whether the PR is dirty or not"
+  prDirtyStatuses:
+    description: "Array of booleans which indicate whether a PR is dirty or not and where the index is the PR ID."
 runs:
   using: "node12"
   main: "dist/index.js"

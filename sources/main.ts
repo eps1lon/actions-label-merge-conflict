@@ -2,7 +2,7 @@ import * as core from "@actions/core";
 import * as github from "@actions/github";
 
 type GitHub = ReturnType<typeof github.getOctokit>;
-const isPrDirtyOutputKey = `isPrDirty`;
+const prDirtyStatusesOutputKey = `prDirtyStatuses`;
 
 async function main() {
 	const repoToken = core.getInput("repoToken", { required: true });
@@ -38,7 +38,7 @@ interface CheckDirtyContext {
 	// number of allowed retries
 	retryMax: number;
 }
-async function checkDirty(context: CheckDirtyContext): Promise<void> {
+async function checkDirty(context: CheckDirtyContext): Promise<any> {
 	const {
 		after,
 		client,
@@ -97,7 +97,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 	if (pullRequests.length === 0) {
 		return;
 	}
-
+	let dirtyStatuses: any = {};
 	for (const pullRequest of pullRequests) {
 		core.debug(JSON.stringify(pullRequest, null, 2));
 
@@ -112,7 +112,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 					addLabelIfNotExists(dirtyLabel, pullRequest, { client }),
 					removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client }),
 				]);
-				core.setOutput(isPrDirtyOutputKey, true);
+				dirtyStatuses[pullRequest.number] = true;
 				break;
 			case "MERGEABLE":
 				info(`remove "${dirtyLabel}"`);
@@ -121,15 +121,16 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 				// we don't add it again because we assume that the removeOnDirtyLabel
 				// is used to mark a PR as "merge!".
 				// So we basically require a manual review pass after rebase.
-				core.setOutput(isPrDirtyOutputKey, false);
+				dirtyStatuses[pullRequest.number] = false;
 				break;
 			case "UNKNOWN":
 				info(`Retrying after ${retryAfter}s.`);
-				core.setOutput(isPrDirtyOutputKey, false);
 				await new Promise((resolve) => {
-					setTimeout(async () => {
+					setTimeout(() => {
 						core.info(`retrying with ${retryMax} retries remaining.`);
-						resolve(await checkDirty({ ...context, retryMax: retryMax - 1 }));
+						resolve(async () => {
+							dirtyStatuses = {...dirtyStatuses, ...(await checkDirty({ ...context, retryMax: retryMax - 1 }))};
+						});
 					}, retryAfter * 1000);
 				});
 				break;
@@ -141,11 +142,14 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 	}
 
 	if (pageInfo.hasNextPage) {
-		await checkDirty({
+		dirtyStatuses = {...dirtyStatuses, ...(await checkDirty({
 			...context,
 			after: pageInfo.endCursor,
-		});
+		}))};
+	} else {
+		core.setOutput(prDirtyStatusesOutputKey, dirtyStatuses);
 	}
+	return dirtyStatuses;
 }
 
 /**
