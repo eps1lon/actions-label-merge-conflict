@@ -85,8 +85,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 			//accept: "application/vnd.github.merge-info-preview+json"
 		},
 		after,
-		owner: github.context.repo.owner,
-		repo: github.context.repo.repo,
+		...getOwnerAndRepo()
 	});
 
 	const {
@@ -169,8 +168,7 @@ async function addLabelIfNotExists(
 	{ client }: { client: GitHub }
 ) {
 	const { data: issue } = await client.issues.get({
-		owner: github.context.repo.owner,
-		repo: github.context.repo.repo,
+		...getOwnerAndRepo(),
 		issue_number: number,
 	});
 
@@ -189,8 +187,7 @@ async function addLabelIfNotExists(
 
 	await client.issues
 		.addLabels({
-			owner: github.context.repo.owner,
-			repo: github.context.repo.repo,
+			...getOwnerAndRepo(),
 			issue_number: number,
 			labels: [label],
 		})
@@ -206,8 +203,7 @@ function removeLabelIfExists(
 ) {
 	return client.issues
 		.removeLabel({
-			owner: github.context.repo.owner,
-			repo: github.context.repo.repo,
+			...getOwnerAndRepo(),
 			issue_number: number,
 			name: label,
 		})
@@ -221,7 +217,13 @@ function removeLabelIfExists(
 			}
 		});
 }
-
+function getOwnerAndRepo(): {owner: string, repo: string} {
+	if(github.context.issue) {
+		return { repo: github.context.issue.repo, owner: github.context.issue.owner };
+	} else {
+		return { repo: github.context.repo.repo, owner: github.context.repo.owner };
+	}
+}
 main().catch((error) => {
 	core.error(String(error));
 	core.setFailed(String(error.message));
