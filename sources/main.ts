@@ -38,7 +38,7 @@ interface CheckDirtyContext {
 	// number of allowed retries
 	retryMax: number;
 }
-async function checkDirty(context: CheckDirtyContext): Promise<any> {
+async function checkDirty(context: CheckDirtyContext): Promise<Record<number, boolean>> {
 	const {
 		after,
 		client,
@@ -97,7 +97,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 	if (pullRequests.length === 0) {
 		return;
 	}
-	let dirtyStatuses: any = {};
+	let dirtyStatuses: Record<number, boolean> = {};
 	for (const pullRequest of pullRequests) {
 		core.debug(JSON.stringify(pullRequest, null, 2));
 

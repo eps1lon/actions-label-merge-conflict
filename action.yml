@@ -16,7 +16,7 @@ inputs:
     description: "Number of times the action retries calculating the mergable state"
 ouputs:
   prDirtyStatuses:
-    description: "Array of booleans which indicate whether a PR is dirty or not and where the index is the PR ID."
+    description: "Object-map. The keys are pull request numbers and their values whether a PR is dirty or not."
 runs:
   using: "node12"
   main: "dist/index.js"
