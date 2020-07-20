@@ -7634,16 +7634,11 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 }
   `;
         core.debug(query);
-        const pullsResponse = yield client.graphql(query, {
-            headers: {
+        const pullsResponse = yield client.graphql(query, Object.assign({ headers: {
             // merge-info preview causes mergeable to become "UNKNOW" (from "CONFLICTING")
             // kind of obvious to no rely on experimental features but...yeah
             //accept: "application/vnd.github.merge-info-preview+json"
-            },
-            after,
-            owner: github.context.repo.owner,
-            repo: github.context.repo.repo,
-        });
+            }, after }, getOwnerAndRepo()));
         const { repository: { pullRequests: { nodes: pullRequests, pageInfo }, }, } = pullsResponse;
         core.debug(JSON.stringify(pullsResponse, null, 2));
         if (pullRequests.length === 0) {
@@ -7701,11 +7696,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
  */
 function addLabelIfNotExists(label, { number }, { client }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { data: issue } = yield client.issues.get({
-            owner: github.context.repo.owner,
-            repo: github.context.repo.repo,
-            issue_number: number,
-        });
+        const { data: issue } = yield client.issues.get(Object.assign(Object.assign({}, getOwnerAndRepo()), { issue_number: number }));
         core.debug(JSON.stringify(issue, null, 2));
         const hasLabel = issue.labels.find((issueLabel) => {
             return issueLabel.name === label;
@@ -7715,33 +7706,46 @@ function addLabelIfNotExists(label, { number }, { client }) {
             return;
         }
         yield client.issues
-            .addLabels({
-            owner: github.context.repo.owner,
-            repo: github.context.repo.repo,
-            issue_number: number,
-            labels: [label],
-        })
+            .addLabels(Object.assign(Object.assign({}, getOwnerAndRepo()), { issue_number: number, labels: [label] }))
             .catch((error) => {
-            throw new Error(`error adding "${label}": ${error}`);
+            if ((error.status === 403 || error.status === 404) &&
+                error.message.endsWith(`Resource not accessible by integration`)) {
+                core.warning(`could not remove label`);
+                core.info(`Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`);
+            }
+            else {
+                throw new Error(`error adding "${label}": ${error}`);
+            }
         });
     });
 }
 function removeLabelIfExists(label, { number }, { client }) {
     return client.issues
-        .removeLabel({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        issue_number: number,
-        name: label,
-    })
+        .removeLabel(Object.assign(Object.assign({}, getOwnerAndRepo()), { issue_number: number, name: label }))
         .catch((error) => {
-        if (error.status !== 404) {
+        if ((error.status === 403 || error.status === 404) &&
+            error.message.endsWith(`Resource not accessible by integration`)) {
+            core.warning(`could not remove label`);
+            core.info(`Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`);
+        }
+        else if (error.status !== 404) {
             throw new Error(`error removing "${label}": ${error}`);
         }
         else {
             core.info(`On #${number} label "${label}" doesn't need to be removed since it doesn't exist on that issue.`);
         }
     });
+}
+function getOwnerAndRepo() {
+    if (github.context.issue) {
+        return {
+            repo: github.context.issue.repo,
+            owner: github.context.issue.owner,
+        };
+    }
+    else {
+        return { repo: github.context.repo.repo, owner: github.context.repo.owner };
+    }
 }
 main().catch((error) => {
     core.error(String(error));
