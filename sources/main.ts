@@ -85,7 +85,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 			//accept: "application/vnd.github.merge-info-preview+json"
 		},
 		after,
-		...getOwnerAndRepo()
+		...getOwnerAndRepo(),
 	});
 
 	const {
@@ -192,9 +192,14 @@ async function addLabelIfNotExists(
 			labels: [label],
 		})
 		.catch((error) => {
-			if ((error.status === 403 || error.status === 404) && error.message.endsWith(`Resource not accessible by integration`)) {
+			if (
+				(error.status === 403 || error.status === 404) &&
+				error.message.endsWith(`Resource not accessible by integration`)
+			) {
 				core.warning(`could not remove label`);
-				core.info(`Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`);
+				core.info(
+					`Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`
+				);
 			} else {
 				throw new Error(`error adding "${label}": ${error}`);
 			}
@@ -213,9 +218,14 @@ function removeLabelIfExists(
 			name: label,
 		})
 		.catch((error) => {
-			if ((error.status === 403 || error.status === 404) && error.message.endsWith(`Resource not accessible by integration`)) {
+			if (
+				(error.status === 403 || error.status === 404) &&
+				error.message.endsWith(`Resource not accessible by integration`)
+			) {
 				core.warning(`could not remove label`);
-				core.info(`Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`);
+				core.info(
+					`Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`
+				);
 			} else if (error.status !== 404) {
 				throw new Error(`error removing "${label}": ${error}`);
 			} else {
@@ -225,9 +235,12 @@ function removeLabelIfExists(
 			}
 		});
 }
-function getOwnerAndRepo(): {owner: string, repo: string} {
-	if(github.context.issue) {
-		return { repo: github.context.issue.repo, owner: github.context.issue.owner };
+function getOwnerAndRepo(): { owner: string; repo: string } {
+	if (github.context.issue) {
+		return {
+			repo: github.context.issue.repo,
+			owner: github.context.issue.owner,
+		};
 	} else {
 		return { repo: github.context.repo.repo, owner: github.context.repo.owner };
 	}
