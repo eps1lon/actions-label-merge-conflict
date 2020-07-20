@@ -192,7 +192,12 @@ async function addLabelIfNotExists(
 			labels: [label],
 		})
 		.catch((error) => {
-			throw new Error(`error adding "${label}": ${error}`);
+			if ((error.status === 403 || error.status === 404) && error.message.endsWith(`Resource not accessible by integration`)) {
+				core.warning(`could not remove label`);
+				core.info(`Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`);
+			} else {
+				throw new Error(`error adding "${label}": ${error}`);
+			}
 		});
 }
 
@@ -208,7 +213,10 @@ function removeLabelIfExists(
 			name: label,
 		})
 		.catch((error) => {
-			if (error.status !== 404) {
+			if ((error.status === 403 || error.status === 404) && error.message.endsWith(`Resource not accessible by integration`)) {
+				core.warning(`could not remove label`);
+				core.info(`Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`);
+			} else if (error.status !== 404) {
 				throw new Error(`error removing "${label}": ${error}`);
 			} else {
 				core.info(
