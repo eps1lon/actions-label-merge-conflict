@@ -3,6 +3,7 @@ import * as github from "@actions/github";
 
 type GitHub = ReturnType<typeof github.getOctokit>;
 const prDirtyStatusesOutputKey = `prDirtyStatuses`;
+const commonErrorDetailedMessage = `Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`;
 
 async function main() {
 	const repoToken = core.getInput("repoToken", { required: true });
@@ -196,10 +197,8 @@ async function addLabelIfNotExists(
 				(error.status === 403 || error.status === 404) &&
 				error.message.endsWith(`Resource not accessible by integration`)
 			) {
-				core.warning(`could not remove label`);
-				core.info(
-					`Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`
-				);
+				core.warning(`could not add label "${label}"`);
+				core.info(commonErrorDetailedMessage);
 			} else {
 				throw new Error(`error adding "${label}": ${error}`);
 			}
@@ -222,10 +221,8 @@ function removeLabelIfExists(
 				(error.status === 403 || error.status === 404) &&
 				error.message.endsWith(`Resource not accessible by integration`)
 			) {
-				core.warning(`could not remove label`);
-				core.info(
-					`Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`
-				);
+				core.warning(`could not remove label "${label}"`);
+				core.info(commonErrorDetailedMessage);
 			} else if (error.status !== 404) {
 				throw new Error(`error removing "${label}": ${error}`);
 			} else {
