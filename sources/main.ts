@@ -50,7 +50,7 @@ async function checkDirty(context: CheckDirtyContext): Promise<Record<number, bo
 
 	if (retryMax <= 0) {
 		core.warning("reached maximum allowed retries");
-		return;
+		return {};
 	}
 
 	interface RepositoryResponse {
@@ -95,7 +95,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 	core.debug(JSON.stringify(pullsResponse, null, 2));
 
 	if (pullRequests.length === 0) {
-		return;
+		return {};
 	}
 	let dirtyStatuses: Record<number, boolean> = {};
 	for (const pullRequest of pullRequests) {
