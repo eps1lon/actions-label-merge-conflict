@@ -38,7 +38,9 @@ interface CheckDirtyContext {
 	// number of allowed retries
 	retryMax: number;
 }
-async function checkDirty(context: CheckDirtyContext): Promise<Record<number, boolean>> {
+async function checkDirty(
+	context: CheckDirtyContext
+): Promise<Record<number, boolean>> {
 	const {
 		after,
 		client,
@@ -129,7 +131,10 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 					setTimeout(() => {
 						core.info(`retrying with ${retryMax} retries remaining.`);
 						resolve(async () => {
-							dirtyStatuses = {...dirtyStatuses, ...(await checkDirty({ ...context, retryMax: retryMax - 1 }))};
+							dirtyStatuses = {
+								...dirtyStatuses,
+								...(await checkDirty({ ...context, retryMax: retryMax - 1 })),
+							};
 						});
 					}, retryAfter * 1000);
 				});
@@ -142,10 +147,13 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 	}
 
 	if (pageInfo.hasNextPage) {
-		dirtyStatuses = {...dirtyStatuses, ...(await checkDirty({
-			...context,
-			after: pageInfo.endCursor,
-		}))};
+		dirtyStatuses = {
+			...dirtyStatuses,
+			...(await checkDirty({
+				...context,
+				after: pageInfo.endCursor,
+			})),
+		};
 	} else {
 		core.setOutput(prDirtyStatusesOutputKey, dirtyStatuses);
 	}
