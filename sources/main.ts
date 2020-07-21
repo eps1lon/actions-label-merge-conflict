@@ -200,8 +200,7 @@ async function addLabelIfNotExists(
 				(error.status === 403 || error.status === 404) &&
 				error.message.endsWith(`Resource not accessible by integration`)
 			) {
-				core.warning(`could not add label "${label}"`);
-				core.info(commonErrorDetailedMessage);
+				core.warning(`could not add label "${label}": ${commonErrorDetailedMessage}`);
 			} else {
 				throw new Error(`error adding "${label}": ${error}`);
 			}
@@ -225,8 +224,7 @@ function removeLabelIfExists(
 				(error.status === 403 || error.status === 404) &&
 				error.message.endsWith(`Resource not accessible by integration`)
 			) {
-				core.warning(`could not remove label "${label}"`);
-				core.info(commonErrorDetailedMessage);
+				core.warning(`could not remove label "${label}": ${commonErrorDetailedMessage}`);
 			} else if (error.status !== 404) {
 				throw new Error(`error removing "${label}": ${error}`);
 			} else {
