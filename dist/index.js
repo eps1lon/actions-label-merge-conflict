@@ -7635,11 +7635,16 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 }
   `;
         core.debug(query);
-        const pullsResponse = yield client.graphql(query, Object.assign({ headers: {
+        const pullsResponse = yield client.graphql(query, {
+            headers: {
             // merge-info preview causes mergeable to become "UNKNOW" (from "CONFLICTING")
             // kind of obvious to no rely on experimental features but...yeah
             //accept: "application/vnd.github.merge-info-preview+json"
-            }, after }, getOwnerAndRepo()));
+            },
+            after,
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+        });
         const { repository: { pullRequests: { nodes: pullRequests, pageInfo }, }, } = pullsResponse;
         core.debug(JSON.stringify(pullsResponse, null, 2));
         if (pullRequests.length === 0) {
@@ -7697,7 +7702,11 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
  */
 function addLabelIfNotExists(label, { number }, { client }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { data: issue } = yield client.issues.get(Object.assign(Object.assign({}, getOwnerAndRepo()), { issue_number: number }));
+        const { data: issue } = yield client.issues.get({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            issue_number: number,
+        });
         core.debug(JSON.stringify(issue, null, 2));
         const hasLabel = issue.labels.find((issueLabel) => {
             return issueLabel.name === label;
@@ -7707,12 +7716,16 @@ function addLabelIfNotExists(label, { number }, { client }) {
             return;
         }
         yield client.issues
-            .addLabels(Object.assign(Object.assign({}, getOwnerAndRepo()), { issue_number: number, labels: [label] }))
+            .addLabels({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            issue_number: number,
+            labels: [label],
+        })
             .catch((error) => {
             if ((error.status === 403 || error.status === 404) &&
                 error.message.endsWith(`Resource not accessible by integration`)) {
-                core.warning(`could not add label "${label}"`);
-                core.info(commonErrorDetailedMessage);
+                core.warning(`could not add label "${label}": ${commonErrorDetailedMessage}`);
             }
             else {
                 throw new Error(`error adding "${label}": ${error}`);
@@ -7722,12 +7735,16 @@ function addLabelIfNotExists(label, { number }, { client }) {
 }
 function removeLabelIfExists(label, { number }, { client }) {
     return client.issues
-        .removeLabel(Object.assign(Object.assign({}, getOwnerAndRepo()), { issue_number: number, name: label }))
+        .removeLabel({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        issue_number: number,
+        name: label,
+    })
         .catch((error) => {
         if ((error.status === 403 || error.status === 404) &&
             error.message.endsWith(`Resource not accessible by integration`)) {
-            core.warning(`could not remove label "${label}"`);
-            core.info(commonErrorDetailedMessage);
+            core.warning(`could not remove label "${label}": ${commonErrorDetailedMessage}`);
         }
         else if (error.status !== 404) {
             throw new Error(`error removing "${label}": ${error}`);
@@ -7736,17 +7753,6 @@ function removeLabelIfExists(label, { number }, { client }) {
             core.info(`On #${number} label "${label}" doesn't need to be removed since it doesn't exist on that issue.`);
         }
     });
-}
-function getOwnerAndRepo() {
-    if (github.context.issue) {
-        return {
-            repo: github.context.issue.repo,
-            owner: github.context.issue.owner,
-        };
-    }
-    else {
-        return { repo: github.context.repo.repo, owner: github.context.repo.owner };
-    }
 }
 main().catch((error) => {
     core.error(String(error));
