@@ -33,14 +33,14 @@ jobs:
         # e.g. eps1lon/actions-label-merge-conflict@feat/retry-unknown
         uses: ./
         with:
-          continueOnMissingPermissions: "${{ github.event.name === 'synchronize' }}"
+          continueOnMissingPermissions: "${{ github.event.name == 'synchronize' }}"
           dirtyLabel: "PR: needs rebase"
           removeOnDirtyLabel: "PR: ready to ship"
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
       - name: Test
         uses: eps1lon/actions-label-merge-conflict@main
         with:
-          continueOnMissingPermissions: "${{ github.event.name === 'synchronize' }}"
+          continueOnMissingPermissions: "${{ github.event.name == 'synchronize' }}"
           dirtyLabel: "PR: needs rebase"
           removeOnDirtyLabel: "PR: ready to ship"
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
