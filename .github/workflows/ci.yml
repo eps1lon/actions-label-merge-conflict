@@ -34,7 +34,7 @@ jobs:
         uses: ./
         with:
           # pull_requests don't have access to secrets
-          continueOnMissingPermissions: "${{ github.action == 'synchronize' }}"
+          continueOnMissingPermissions: "${{ github.event.action == 'synchronize' }}"
           dirtyLabel: "PR: needs rebase"
           removeOnDirtyLabel: "PR: ready to ship"
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
@@ -42,7 +42,7 @@ jobs:
         uses: eps1lon/actions-label-merge-conflict@main
         with:
           # pull_requests don't have access to secrets
-          continueOnMissingPermissions: "${{ github.action == 'synchronize' }}"
+          continueOnMissingPermissions: "${{ github.event.action == 'synchronize' }}"
           dirtyLabel: "PR: needs rebase"
           removeOnDirtyLabel: "PR: ready to ship"
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
