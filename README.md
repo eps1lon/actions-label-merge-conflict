@@ -20,13 +20,15 @@ This actions achieve this with minimal noise (no comment bloat) by adding a labe
 
 **Required** The name of the label that should be added once a PR has merge conflicts.
 
-### `removeOnDirtyLabel`
-
-**Required** The name of the label that should be removed once a PR has merge conflicts.
-
 ### `repoToken`
 
 **Required** Token for the repository. Can be passed in using {{ secrets.GITHUB_TOKEN }}
+
+### `removeOnDirtyLabel`
+
+The name of the label that should be removed once a PR has merge conflicts.
+
+**Default**: No label is removed if a PR is marked as dirty.
 
 ### `retryAfter`
 
