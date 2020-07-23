@@ -26,6 +26,9 @@ async function main() {
 	});
 }
 
+const continueOnMissingPermissions = () =>
+	core.getInput("continueOnMissingPermissions") === "true" || false;
+
 interface CheckDirtyContext {
 	after: string | null;
 	client: GitHub;
@@ -198,9 +201,12 @@ async function addLabelIfNotExists(
 		.catch((error) => {
 			if (
 				(error.status === 403 || error.status === 404) &&
+				continueOnMissingPermissions() &&
 				error.message.endsWith(`Resource not accessible by integration`)
 			) {
-				core.warning(`could not add label "${label}": ${commonErrorDetailedMessage}`);
+				core.warning(
+					`could not add label "${label}": ${commonErrorDetailedMessage}`
+				);
 			} else {
 				throw new Error(`error adding "${label}": ${error}`);
 			}
@@ -222,9 +228,12 @@ function removeLabelIfExists(
 		.catch((error) => {
 			if (
 				(error.status === 403 || error.status === 404) &&
+				continueOnMissingPermissions() &&
 				error.message.endsWith(`Resource not accessible by integration`)
 			) {
-				core.warning(`could not remove label "${label}": ${commonErrorDetailedMessage}`);
+				core.warning(
+					`could not remove label "${label}": ${commonErrorDetailedMessage}`
+				);
 			} else if (error.status !== 404) {
 				throw new Error(`error removing "${label}": ${error}`);
 			} else {

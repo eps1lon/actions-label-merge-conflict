@@ -14,6 +14,8 @@ inputs:
     description: "Number of seconds after which the action runs again if the mergable state is unknown."
   retryMax:
     description: "Number of times the action retries calculating the mergable state"
+  continueOnMissingPermissions:
+    description: "Boolean. Whether to continue or fail when the provided token is missing permissions. By default pull requests from a fork do not have access to secrets and get a read only github token, resulting in a failure to update tags."
 ouputs:
   prDirtyStatuses:
     description: "Object-map. The keys are pull request numbers and their values whether a PR is dirty or not."

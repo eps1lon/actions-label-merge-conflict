@@ -7608,6 +7608,7 @@ function main() {
         });
     });
 }
+const continueOnMissingPermissions = () => core.getInput("continueOnMissingPermissions") === "true" || false;
 function checkDirty(context) {
     return __awaiter(this, void 0, void 0, function* () {
         const { after, client, dirtyLabel, removeOnDirtyLabel, retryAfter, retryMax, } = context;
@@ -7724,6 +7725,7 @@ function addLabelIfNotExists(label, { number }, { client }) {
         })
             .catch((error) => {
             if ((error.status === 403 || error.status === 404) &&
+                continueOnMissingPermissions() &&
                 error.message.endsWith(`Resource not accessible by integration`)) {
                 core.warning(`could not add label "${label}": ${commonErrorDetailedMessage}`);
             }
@@ -7743,6 +7745,7 @@ function removeLabelIfExists(label, { number }, { client }) {
     })
         .catch((error) => {
         if ((error.status === 403 || error.status === 404) &&
+            continueOnMissingPermissions() &&
             error.message.endsWith(`Resource not accessible by integration`)) {
             core.warning(`could not remove label "${label}": ${commonErrorDetailedMessage}`);
         }
