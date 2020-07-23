@@ -33,6 +33,7 @@ jobs:
         # e.g. eps1lon/actions-label-merge-conflict@feat/retry-unknown
         uses: ./
         with:
+          # pull_requests don't have access to secrets
           continueOnMissingPermissions: "${{ github.action == 'synchronize' }}"
           dirtyLabel: "PR: needs rebase"
           removeOnDirtyLabel: "PR: ready to ship"
@@ -40,6 +41,7 @@ jobs:
       - name: Test
         uses: eps1lon/actions-label-merge-conflict@main
         with:
+          # pull_requests don't have access to secrets
           continueOnMissingPermissions: "${{ github.action == 'synchronize' }}"
           dirtyLabel: "PR: needs rebase"
           removeOnDirtyLabel: "PR: ready to ship"
