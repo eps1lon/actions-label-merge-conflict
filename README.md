@@ -40,6 +40,12 @@ Number of times the script will check the mergable state aigain. After that it w
 
 **Default**: 5
 
+### `continueOnMissingPermissions`
+
+Boolean. Whether to continue or fail when the provided token is missing permissions. By default pull requests from a fork do not have access to secrets and get a read only github token, resulting in a failure to update tags.
+
+**Default**: false
+
 ## Example usage
 
 ```yaml
