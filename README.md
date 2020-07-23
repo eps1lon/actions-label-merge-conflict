@@ -4,6 +4,35 @@ This action adds a given label to Pull Requests that have merge conflicts and re
 
 ![label lifecycle: open (no label), push to main -> merge conflict -> label: PR needs rebase -> resolve conflicts on PR -> remove label: PR needs rebase](https://raw.githubusercontent.com/eps1lon/actions-label-merge-conflict/main/label-lifecycle.png).
 
+## Example usage
+
+```yaml
+name: "Maintenance"
+on:
+  # So that PRs touching the same files as the push are updated
+  push:
+  # So that the `dirtyLabel` is removed if conflicts are resolved
+  # WARNING: PRs from forks don't have access to screts.
+  # You might want to skip this action on pull_requests which means
+  # the label might not reflect the current state of the PR until
+  # another push on `main`
+  pull_request:
+    types: [synchronize]
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check if prs are dirty
+        uses: eps1lon/actions-label-merge-conflict@releases/1.x
+        with:
+          dirtyLabel: "PR: needs rebase"
+          removeOnDirtyLabel: "PR: ready to ship"
+          repoToken: "${{ secrets.GITHUB_TOKEN }}"
+```
+
+You can use `eps1lon/actions-label-merge-conflict@main` instead to get the latest, experimental version.
+
 ## Why?
 
 PRs are usually open for a few days until a maintainer can take a look. When this happens a Pull Request (PR) might already be outdated without the author being notified of this. A maintainer either has to resolve them (which takes time) or has to ping the author. This creates a feedback loop that can be reduced by this action.
@@ -47,30 +76,3 @@ Number of times the script will check the mergable state aigain. After that it w
 Boolean. Whether to continue or fail when the provided token is missing permissions. By default pull requests from a fork do not have access to secrets and get a read only github token, resulting in a failure to update tags.
 
 **Default**: false
-
-## Example usage
-
-```yaml
-name: "Maintenance"
-on:
-  # So that PRs touching the same files as the push are updated
-  push:
-  # So that the `dirtyLabel` is removed if conflicts are resolved
-  # WARNING: PRs from forks don't have access to screts.
-  # You might want to skip this action on pull_requests which means
-  # the label might not reflect the current state of the PR until
-  # another push on `main`
-  pull_request:
-    types: [synchronize]
-
-jobs:
-  main:
-    runs-on: ubuntu-latest
-    steps:
-      - name: check if prs are dirty
-        uses: eps1lon/actions-label-merge-conflict@releases/1.x
-        with:
-          dirtyLabel: "PR: needs rebase"
-          removeOnDirtyLabel: "PR: ready to ship"
-          repoToken: "${{ secrets.GITHUB_TOKEN }}"
-```
