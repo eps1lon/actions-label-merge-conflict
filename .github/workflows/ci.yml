@@ -41,3 +41,4 @@ jobs:
           dirtyLabel: "PR: needs rebase"
           removeOnDirtyLabel: "PR: ready to ship"
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          continueOnMissingPermissions: true
