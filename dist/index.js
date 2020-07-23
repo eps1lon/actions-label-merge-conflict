@@ -7587,6 +7587,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
 const prDirtyStatusesOutputKey = `prDirtyStatuses`;
+const commonErrorDetailedMessage = `Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`;
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const repoToken = core.getInput("repoToken", { required: true });
@@ -7605,6 +7606,7 @@ function main() {
         });
     });
 }
+const continueOnMissingPermissions = () => core.getInput("continueOnMissingPermissions") === "true" || false;
 function checkDirty(context) {
     return __awaiter(this, void 0, void 0, function* () {
         const { after, client, dirtyLabel, removeOnDirtyLabel, retryAfter, retryMax, } = context;
@@ -7722,7 +7724,14 @@ function addLabelIfNotExists(label, { number }, { client }) {
             labels: [label],
         })
             .catch((error) => {
-            throw new Error(`error adding "${label}": ${error}`);
+            if ((error.status === 403 || error.status === 404) &&
+                continueOnMissingPermissions() &&
+                error.message.endsWith(`Resource not accessible by integration`)) {
+                core.warning(`could not add label "${label}": ${commonErrorDetailedMessage}`);
+            }
+            else {
+                throw new Error(`error adding "${label}": ${error}`);
+            }
         });
     });
 }
@@ -7735,7 +7744,12 @@ function removeLabelIfExists(label, { number }, { client }) {
         name: label,
     })
         .catch((error) => {
-        if (error.status !== 404) {
+        if ((error.status === 403 || error.status === 404) &&
+            continueOnMissingPermissions() &&
+            error.message.endsWith(`Resource not accessible by integration`)) {
+            core.warning(`could not remove label "${label}": ${commonErrorDetailedMessage}`);
+        }
+        else if (error.status !== 404) {
             throw new Error(`error removing "${label}": ${error}`);
         }
         else {
