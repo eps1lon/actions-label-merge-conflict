@@ -106,11 +106,17 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 
 		switch (pullRequest.mergeable) {
 			case "CONFLICTING":
-				info(`add "${dirtyLabel}", remove "${removeOnDirtyLabel ? removeOnDirtyLabel : `nothing`}"`);
+				info(
+					`add "${dirtyLabel}", remove "${
+						removeOnDirtyLabel ? removeOnDirtyLabel : `nothing`
+					}"`
+				);
 				// for labels PRs and issues are the same
 				await Promise.all([
 					addLabelIfNotExists(dirtyLabel, pullRequest, { client }),
-					removeOnDirtyLabel ? removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client }) : Promise.resolve(),
+					removeOnDirtyLabel
+						? removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
+						: Promise.resolve(),
 				]);
 				dirtyStatuses[pullRequest.number] = true;
 				break;

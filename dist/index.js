@@ -7591,9 +7591,7 @@ function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const repoToken = core.getInput("repoToken", { required: true });
         const dirtyLabel = core.getInput("dirtyLabel", { required: true });
-        const removeOnDirtyLabel = core.getInput("removeOnDirtyLabel", {
-            required: true,
-        });
+        const removeOnDirtyLabel = core.getInput("removeOnDirtyLabel");
         const retryAfter = parseInt(core.getInput("retryAfter") || "120", 10);
         const retryMax = parseInt(core.getInput("retryMax") || "5", 10);
         const client = github.getOctokit(repoToken);
@@ -7655,11 +7653,13 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
             const info = (message) => core.info(`for PR "${pullRequest.title}": ${message}`);
             switch (pullRequest.mergeable) {
                 case "CONFLICTING":
-                    info(`add "${dirtyLabel}", remove "${removeOnDirtyLabel}"`);
+                    info(`add "${dirtyLabel}", remove "${removeOnDirtyLabel ? removeOnDirtyLabel : `nothing`}"`);
                     // for labels PRs and issues are the same
                     yield Promise.all([
                         addLabelIfNotExists(dirtyLabel, pullRequest, { client }),
-                        removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client }),
+                        removeOnDirtyLabel
+                            ? removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
+                            : Promise.resolve(),
                     ]);
                     dirtyStatuses[pullRequest.number] = true;
                     break;
