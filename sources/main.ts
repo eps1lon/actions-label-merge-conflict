@@ -27,6 +27,9 @@ async function main() {
 const continueOnMissingPermissions = () =>
 	core.getInput("continueOnMissingPermissions") === "true" || false;
 
+const commentOnDirty = () => core.getInput("commentOnDirty");
+const commentOnClean = () => core.getInput("commentOnClean");
+
 interface CheckDirtyContext {
 	after: string | null;
 	client: GitHub;
@@ -102,6 +105,8 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 		return {};
 	}
 	let dirtyStatuses: Record<number, boolean> = {};
+	let dirtyComment = commentOnDirty();
+	let cleanComment = commentOnClean();
 	for (const pullRequest of pullRequests) {
 		core.debug(JSON.stringify(pullRequest, null, 2));
 
@@ -121,12 +126,20 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 					removeOnDirtyLabel
 						? removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
 						: Promise.resolve(),
+					dirtyComment
+						? addComment(dirtyComment, pullRequest, { client })
+						: Promise.resolve(),
 				]);
 				dirtyStatuses[pullRequest.number] = true;
 				break;
 			case "MERGEABLE":
 				info(`remove "${dirtyLabel}"`);
-				await removeLabelIfExists(dirtyLabel, pullRequest, { client });
+				await Promise.all([
+					removeLabelIfExists(dirtyLabel, pullRequest, { client }),
+					cleanComment
+						? addComment(cleanComment, pullRequest, { client })
+						: Promise.resolve(),
+				]);
 				// while we removed a particular label once we enter "CONFLICTING"
 				// we don't add it again because we assume that the removeOnDirtyLabel
 				// is used to mark a PR as "merge!".
@@ -246,6 +259,33 @@ function removeLabelIfExists(
 				);
 			}
 		});
+}
+
+async function addComment(
+	comment: string,
+	{ number }: { number: number },
+	{ client }: { client: GitHub }
+): Promise<void> {
+	try {
+		client.issues.createComment({
+			owner: github.context.repo.owner,
+			repo: github.context.repo.repo,
+			issue_number: number,
+			body: comment,
+		});
+	} catch (error) {
+		if (
+			(error.status === 403 || error.status === 404) &&
+			continueOnMissingPermissions() &&
+			error.message.endsWith(`Resource not accessible by integration`)
+		) {
+			core.warning(
+				`couldn't add comment "${comment}": ${commonErrorDetailedMessage}`
+			);
+		} else if (error.status !== 404) {
+			throw new Error(`error adding "${comment}": ${error}`);
+		}
+	}
 }
 main().catch((error) => {
 	core.error(String(error));
