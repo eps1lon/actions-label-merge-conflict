@@ -7772,7 +7772,7 @@ function removeLabelIfExists(label, { number }, { client }) {
 function addComment(comment, { number }, { client }) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            client.issues.createComment({
+            yield client.issues.createComment({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,
                 issue_number: number,

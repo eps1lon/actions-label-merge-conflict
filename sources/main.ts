@@ -267,7 +267,7 @@ async function addComment(
 	{ client }: { client: GitHub }
 ): Promise<void> {
 	try {
-		client.issues.createComment({
+		await client.issues.createComment({
 			owner: github.context.repo.owner,
 			repo: github.context.repo.repo,
 			issue_number: number,
