@@ -7668,7 +7668,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
                             : Promise.resolve(),
                         dirtyComment
                             ? addComment(dirtyComment, pullRequest, { client })
-                            : Promise.resolve()
+                            : Promise.resolve(),
                     ]);
                     dirtyStatuses[pullRequest.number] = true;
                     break;
@@ -7678,7 +7678,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
                         removeLabelIfExists(dirtyLabel, pullRequest, { client }),
                         cleanComment
                             ? addComment(cleanComment, pullRequest, { client })
-                            : Promise.resolve()
+                            : Promise.resolve(),
                     ]);
                     // while we removed a particular label once we enter "CONFLICTING"
                     // we don't add it again because we assume that the removeOnDirtyLabel
@@ -7785,7 +7785,7 @@ function addComment(comment, { number }, { client }) {
                 error.message.endsWith(`Resource not accessible by integration`)) {
                 core.warning(`couldn't add comment "${comment}": ${commonErrorDetailedMessage}`);
             }
-            else if (error.status !== 404) {
+            else {
                 throw new Error(`error adding "${comment}": ${error}`);
             }
         }

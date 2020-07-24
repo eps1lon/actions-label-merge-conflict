@@ -282,7 +282,7 @@ async function addComment(
 			core.warning(
 				`couldn't add comment "${comment}": ${commonErrorDetailedMessage}`
 			);
-		} else if (error.status !== 404) {
+		} else {
 			throw new Error(`error adding "${comment}": ${error}`);
 		}
 	}
