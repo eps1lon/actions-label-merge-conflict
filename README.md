@@ -83,10 +83,10 @@ Boolean. Whether to continue or fail when the provided token is missing permissi
 
 String. Comment to add when the pull request is conflicting. Supports markdown.
 
-**Default**: (empty string)
+**Default**: No comment is posted.
 
 ### `commentOnClean`
 
 String. Comment to add when the pull request is not conflicting anymore. Supports markdown.
 
-**Default**: (empty string)
+**Default**: No comment is posted.

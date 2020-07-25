@@ -126,7 +126,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 					removeOnDirtyLabel
 						? removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
 						: Promise.resolve(),
-					dirtyComment
+					dirtyComment !== ""
 						? addComment(dirtyComment, pullRequest, { client })
 						: Promise.resolve(),
 				]);
@@ -136,7 +136,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 				info(`remove "${dirtyLabel}"`);
 				await Promise.all([
 					removeLabelIfExists(dirtyLabel, pullRequest, { client }),
-					cleanComment
+					cleanComment !== ""
 						? addComment(cleanComment, pullRequest, { client })
 						: Promise.resolve(),
 				]);
