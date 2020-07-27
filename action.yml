@@ -15,6 +15,10 @@ inputs:
     description: "Number of times the action retries calculating the mergable state"
   continueOnMissingPermissions:
     description: "Boolean. Whether to continue or fail when the provided token is missing permissions. By default pull requests from a fork do not have access to secrets and get a read only github token, resulting in a failure to update tags."
+  commentOnDirty:
+    description: "String. Comment to add when the pull request is conflicting. Supports markdown."
+  commentOnClean:
+    description: "String. Comment to add when the pull request is not conflicting anymore. Supports markdown."
 ouputs:
   prDirtyStatuses:
     description: "Object-map. The keys are pull request numbers and their values whether a PR is dirty or not."

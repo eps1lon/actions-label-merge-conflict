@@ -29,6 +29,8 @@ jobs:
           dirtyLabel: "PR: needs rebase"
           removeOnDirtyLabel: "PR: ready to ship"
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
+          commentOnDirty: "This pull request has conflicts, please resolve those before we can evaluate the pull request."
+          commentOnClean: "Conflicts have been resolved. A maintainer will review the pull request shortly."
 ```
 
 You can use `eps1lon/actions-label-merge-conflict@main` instead to get the latest, experimental version.
@@ -76,3 +78,15 @@ Number of times the script will check the mergable state aigain. After that it w
 Boolean. Whether to continue or fail when the provided token is missing permissions. By default pull requests from a fork do not have access to secrets and get a read only github token, resulting in a failure to update tags.
 
 **Default**: false
+
+### `commentOnDirty`
+
+String. Comment to add when the pull request is conflicting. Supports markdown.
+
+**Default**: No comment is posted.
+
+### `commentOnClean`
+
+String. Comment to add when the pull request is not conflicting anymore. Supports markdown.
+
+**Default**: No comment is posted.

@@ -7607,6 +7607,8 @@ function main() {
     });
 }
 const continueOnMissingPermissions = () => core.getInput("continueOnMissingPermissions") === "true" || false;
+const commentOnDirty = () => core.getInput("commentOnDirty");
+const commentOnClean = () => core.getInput("commentOnClean");
 function checkDirty(context) {
     return __awaiter(this, void 0, void 0, function* () {
         const { after, client, dirtyLabel, removeOnDirtyLabel, retryAfter, retryMax, } = context;
@@ -7650,6 +7652,8 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
             return {};
         }
         let dirtyStatuses = {};
+        let dirtyComment = commentOnDirty();
+        let cleanComment = commentOnClean();
         for (const pullRequest of pullRequests) {
             core.debug(JSON.stringify(pullRequest, null, 2));
             const info = (message) => core.info(`for PR "${pullRequest.title}": ${message}`);
@@ -7662,12 +7666,20 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
                         removeOnDirtyLabel
                             ? removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
                             : Promise.resolve(),
+                        dirtyComment !== ""
+                            ? addComment(dirtyComment, pullRequest, { client })
+                            : Promise.resolve(),
                     ]);
                     dirtyStatuses[pullRequest.number] = true;
                     break;
                 case "MERGEABLE":
                     info(`remove "${dirtyLabel}"`);
-                    yield removeLabelIfExists(dirtyLabel, pullRequest, { client });
+                    yield Promise.all([
+                        removeLabelIfExists(dirtyLabel, pullRequest, { client }),
+                        cleanComment !== ""
+                            ? addComment(cleanComment, pullRequest, { client })
+                            : Promise.resolve(),
+                    ]);
                     // while we removed a particular label once we enter "CONFLICTING"
                     // we don't add it again because we assume that the removeOnDirtyLabel
                     // is used to mark a PR as "merge!".
@@ -7754,6 +7766,28 @@ function removeLabelIfExists(label, { number }, { client }) {
         }
         else {
             core.info(`On #${number} label "${label}" doesn't need to be removed since it doesn't exist on that issue.`);
+        }
+    });
+}
+function addComment(comment, { number }, { client }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            yield client.issues.createComment({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                issue_number: number,
+                body: comment,
+            });
+        }
+        catch (error) {
+            if ((error.status === 403 || error.status === 404) &&
+                continueOnMissingPermissions() &&
+                error.message.endsWith(`Resource not accessible by integration`)) {
+                core.warning(`couldn't add comment "${comment}": ${commonErrorDetailedMessage}`);
+            }
+            else {
+                throw new Error(`error adding "${comment}": ${error}`);
+            }
         }
     });
 }
