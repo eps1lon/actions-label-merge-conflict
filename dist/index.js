@@ -7640,6 +7640,11 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
         permalink
         title
         updatedAt
+        labels(first: 100) {
+          nodes {
+            name
+          }
+        }
       }
       pageInfo {
         endCursor
@@ -7727,18 +7732,13 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
  * Assumes that the label exists
  * @returns `true` if the label was added, `false` otherwise (e.g. when it already exists)
  */
-function addLabelIfNotExists(label, { number }, { client }) {
+function addLabelIfNotExists(labelName, issue, { client }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { data: issue } = yield client.issues.get({
-            owner: github.context.repo.owner,
-            repo: github.context.repo.repo,
-            issue_number: number,
-        });
         core.debug(JSON.stringify(issue, null, 2));
-        const hasLabel = issue.labels.find((issueLabel) => {
-            return issueLabel.name === label;
+        const hasLabel = issue.labels.nodes.find((labe) => {
+            return labe.name === labelName;
         }) !== undefined;
-        core.info(`Issue #${number} already has label '${label}'. Skipping.`);
+        core.info(`Issue #${issue.number} already has label '${labelName}'. Skipping.`);
         if (hasLabel) {
             return false;
         }
@@ -7746,42 +7746,48 @@ function addLabelIfNotExists(label, { number }, { client }) {
             .addLabels({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
-            issue_number: number,
-            labels: [label],
+            issue_number: issue.number,
+            labels: [labelName],
         })
             .then(() => true, (error) => {
             if ((error.status === 403 || error.status === 404) &&
                 continueOnMissingPermissions() &&
                 error.message.endsWith(`Resource not accessible by integration`)) {
-                core.warning(`could not add label "${label}": ${commonErrorDetailedMessage}`);
+                core.warning(`could not add label "${labelName}": ${commonErrorDetailedMessage}`);
             }
             else {
-                throw new Error(`error adding "${label}": ${error}`);
+                throw new Error(`error adding "${labelName}": ${error}`);
             }
             return false;
         });
     });
 }
-function removeLabelIfExists(label, { number }, { client }) {
+function removeLabelIfExists(labelName, issue, { client }) {
     return __awaiter(this, void 0, void 0, function* () {
+        const hasLabel = issue.labels.nodes.find((labe) => {
+            return labe.name === labelName;
+        }) !== undefined;
+        if (!hasLabel) {
+            return false;
+        }
         return client.issues
             .removeLabel({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
-            issue_number: number,
-            name: label,
+            issue_number: issue.number,
+            name: labelName,
         })
             .then(() => true, (error) => {
             if ((error.status === 403 || error.status === 404) &&
                 continueOnMissingPermissions() &&
                 error.message.endsWith(`Resource not accessible by integration`)) {
-                core.warning(`could not remove label "${label}": ${commonErrorDetailedMessage}`);
+                core.warning(`could not remove label "${labelName}": ${commonErrorDetailedMessage}`);
             }
             else if (error.status !== 404) {
-                throw new Error(`error removing "${label}": ${error}`);
+                throw new Error(`error removing "${labelName}": ${error}`);
             }
             else {
-                core.info(`On #${number} label "${label}" doesn't need to be removed since it doesn't exist on that issue.`);
+                core.info(`On #${issue.number} label "${labelName}" doesn't need to be removed since it doesn't exist on that issue.`);
             }
             return false;
         });
