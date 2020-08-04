@@ -24,9 +24,7 @@ async function main() {
 	const retryMax = parseInt(core.getInput("retryMax") || "5", 10);
 
 	const isPushEvent = process.env.GITHUB_EVENT_NAME === "push";
-	core.debug(
-		`${process.env.GITHUB_EVENT_NAME} === "push" = ${String(isPushEvent)}`
-	);
+	core.debug(`isPushEvent = ${process.env.GITHUB_EVENT_NAME} === "push"`);
 	const baseRefName = isPushEvent ? getBranchName(github.context.ref) : null;
 
 	const client = github.getOctokit(repoToken);
