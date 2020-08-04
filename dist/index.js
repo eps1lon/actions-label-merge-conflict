@@ -7623,6 +7623,43 @@ function main() {
 const continueOnMissingPermissions = () => core.getInput("continueOnMissingPermissions") === "true" || false;
 const commentOnDirty = () => core.getInput("commentOnDirty");
 const commentOnClean = () => core.getInput("commentOnClean");
+function updatePrLabels(context) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const { cleanComment, client, dirtyComment, dirtyLabel, pullRequest, removeOnDirtyLabel, } = context;
+        core.debug(JSON.stringify(pullRequest, null, 2));
+        const info = (message) => core.info(`for PR "${pullRequest.title}": ${message}`);
+        switch (pullRequest.mergeable) {
+            case "CONFLICTING":
+                info(`add "${dirtyLabel}", remove "${removeOnDirtyLabel ? removeOnDirtyLabel : `nothing`}"`);
+                // for labels PRs and issues are the same
+                const [addedDirtyLabel] = yield Promise.all([
+                    addLabelIfNotExists(dirtyLabel, pullRequest, { client }),
+                    removeOnDirtyLabel
+                        ? removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
+                        : Promise.resolve(false),
+                ]);
+                if (dirtyComment !== "" && addedDirtyLabel) {
+                    yield addComment(dirtyComment, pullRequest, { client });
+                }
+                return true;
+            case "MERGEABLE":
+                info(`remove "${dirtyLabel}"`);
+                const removedDirtyLabel = yield removeLabelIfExists(dirtyLabel, pullRequest, { client });
+                if (removedDirtyLabel && cleanComment !== "") {
+                    yield addComment(cleanComment, pullRequest, { client });
+                }
+                // while we removed a particular label once we enter "CONFLICTING"
+                // we don't add it again because we assume that the removeOnDirtyLabel
+                // is used to mark a PR as "merge!".
+                // So we basically require a manual review pass after rebase.
+                return false;
+            case "UNKNOWN":
+                return undefined;
+            default:
+                throw new TypeError(`unhandled mergeable state '${pullRequest.mergeable}'`);
+        }
+    });
+}
 function checkDirty(context) {
     return __awaiter(this, void 0, void 0, function* () {
         const { after, baseRefName, client, dirtyLabel, removeOnDirtyLabel, retryAfter, retryMax, } = context;
@@ -7676,47 +7713,26 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
         let cleanComment = commentOnClean();
         for (const pullRequest of pullRequests) {
             core.debug(JSON.stringify(pullRequest, null, 2));
-            const info = (message) => core.info(`for PR "${pullRequest.title}": ${message}`);
-            switch (pullRequest.mergeable) {
-                case "CONFLICTING":
-                    info(`add "${dirtyLabel}", remove "${removeOnDirtyLabel ? removeOnDirtyLabel : `nothing`}"`);
-                    // for labels PRs and issues are the same
-                    const [addedDirtyLabel] = yield Promise.all([
-                        addLabelIfNotExists(dirtyLabel, pullRequest, { client }),
-                        removeOnDirtyLabel
-                            ? removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
-                            : Promise.resolve(false),
-                    ]);
-                    if (dirtyComment !== "" && addedDirtyLabel) {
-                        yield addComment(dirtyComment, pullRequest, { client });
-                    }
-                    dirtyStatuses[pullRequest.number] = true;
-                    break;
-                case "MERGEABLE":
-                    info(`remove "${dirtyLabel}"`);
-                    const removedDirtyLabel = yield removeLabelIfExists(dirtyLabel, pullRequest, { client });
-                    if (removedDirtyLabel && cleanComment !== "") {
-                        yield addComment(cleanComment, pullRequest, { client });
-                    }
-                    // while we removed a particular label once we enter "CONFLICTING"
-                    // we don't add it again because we assume that the removeOnDirtyLabel
-                    // is used to mark a PR as "merge!".
-                    // So we basically require a manual review pass after rebase.
-                    dirtyStatuses[pullRequest.number] = false;
-                    break;
-                case "UNKNOWN":
-                    info(`Retrying after ${retryAfter}s.`);
-                    yield new Promise((resolve) => {
-                        setTimeout(() => {
-                            core.info(`retrying with ${retryMax} retries remaining.`);
-                            resolve(() => __awaiter(this, void 0, void 0, function* () {
-                                dirtyStatuses = Object.assign(Object.assign({}, dirtyStatuses), (yield checkDirty(Object.assign(Object.assign({}, context), { retryMax: retryMax - 1 }))));
-                            }));
-                        }, retryAfter * 1000);
-                    });
-                    break;
-                default:
-                    throw new TypeError(`unhandled mergeable state '${pullRequest.mergeable}'`);
+            const dirtyStatus = yield updatePrLabels({
+                cleanComment,
+                client,
+                dirtyComment,
+                dirtyLabel,
+                pullRequest,
+                removeOnDirtyLabel,
+            });
+            if (dirtyStatus === undefined) {
+                yield new Promise((resolve) => {
+                    setTimeout(() => {
+                        core.info(`retrying with ${retryMax} retries remaining.`);
+                        resolve(() => __awaiter(this, void 0, void 0, function* () {
+                            dirtyStatuses = Object.assign(Object.assign({}, dirtyStatuses), (yield checkDirty(Object.assign(Object.assign({}, context), { retryMax: retryMax - 1 }))));
+                        }));
+                    }, retryAfter * 1000);
+                });
+            }
+            else {
+                dirtyStatuses[pullRequest.number] = dirtyStatus;
             }
         }
         if (pageInfo.hasNextPage) {
