@@ -22,6 +22,8 @@ async function main() {
 	const removeOnDirtyLabel = core.getInput("removeOnDirtyLabel");
 	const retryAfter = parseInt(core.getInput("retryAfter") || "120", 10);
 	const retryMax = parseInt(core.getInput("retryMax") || "5", 10);
+	const commentOnDirty = core.getInput("commentOnDirty");
+	const commentOnClean = core.getInput("commentOnClean");
 
 	const isPushEvent = process.env.GITHUB_EVENT_NAME === "push";
 	core.debug(`isPushEvent = ${process.env.GITHUB_EVENT_NAME} === "push"`);
@@ -32,6 +34,8 @@ async function main() {
 	await checkDirty({
 		baseRefName,
 		client,
+		commentOnClean,
+		commentOnDirty,
 		dirtyLabel,
 		removeOnDirtyLabel,
 		after: null,
@@ -43,13 +47,12 @@ async function main() {
 const continueOnMissingPermissions = () =>
 	core.getInput("continueOnMissingPermissions") === "true" || false;
 
-const commentOnDirty = () => core.getInput("commentOnDirty");
-const commentOnClean = () => core.getInput("commentOnClean");
-
 interface CheckDirtyContext {
 	after: string | null;
 	baseRefName: string | null;
 	client: GitHub;
+	commentOnClean: string;
+	commentOnDirty: string;
 	dirtyLabel: string;
 	removeOnDirtyLabel: string;
 	/**
@@ -67,6 +70,8 @@ async function checkDirty(
 		after,
 		baseRefName,
 		client,
+		commentOnClean,
+		commentOnDirty,
 		dirtyLabel,
 		removeOnDirtyLabel,
 		retryAfter,
@@ -146,8 +151,6 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 		return {};
 	}
 	let dirtyStatuses: Record<number, boolean> = {};
-	let dirtyComment = commentOnDirty();
-	let cleanComment = commentOnClean();
 	for (const pullRequest of pullRequests) {
 		core.debug(JSON.stringify(pullRequest, null, 2));
 
@@ -168,8 +171,8 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 						? removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
 						: Promise.resolve(false),
 				]);
-				if (dirtyComment !== "" && addedDirtyLabel) {
-					await addComment(dirtyComment, pullRequest, { client });
+				if (commentOnDirty !== "" && addedDirtyLabel) {
+					await addComment(commentOnDirty, pullRequest, { client });
 				}
 				dirtyStatuses[pullRequest.number] = true;
 				break;
@@ -180,8 +183,8 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 					pullRequest,
 					{ client }
 				);
-				if (removedDirtyLabel && cleanComment !== "") {
-					await addComment(cleanComment, pullRequest, { client });
+				if (removedDirtyLabel && commentOnClean !== "") {
+					await addComment(commentOnClean, pullRequest, { client });
 				}
 				// while we removed a particular label once we enter "CONFLICTING"
 				// we don't add it again because we assume that the removeOnDirtyLabel
