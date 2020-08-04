@@ -7605,6 +7605,8 @@ function main() {
         const removeOnDirtyLabel = core.getInput("removeOnDirtyLabel");
         const retryAfter = parseInt(core.getInput("retryAfter") || "120", 10);
         const retryMax = parseInt(core.getInput("retryMax") || "5", 10);
+        const commentOnDirty = core.getInput("commentOnDirty");
+        const commentOnClean = core.getInput("commentOnClean");
         const isPushEvent = process.env.GITHUB_EVENT_NAME === "push";
         core.debug(`isPushEvent = ${process.env.GITHUB_EVENT_NAME} === "push"`);
         const baseRefName = isPushEvent ? getBranchName(github.context.ref) : null;
@@ -7612,6 +7614,8 @@ function main() {
         yield checkDirty({
             baseRefName,
             client,
+            commentOnClean,
+            commentOnDirty,
             dirtyLabel,
             removeOnDirtyLabel,
             after: null,
@@ -7621,11 +7625,9 @@ function main() {
     });
 }
 const continueOnMissingPermissions = () => core.getInput("continueOnMissingPermissions") === "true" || false;
-const commentOnDirty = () => core.getInput("commentOnDirty");
-const commentOnClean = () => core.getInput("commentOnClean");
 function checkDirty(context) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { after, baseRefName, client, dirtyLabel, removeOnDirtyLabel, retryAfter, retryMax, } = context;
+        const { after, baseRefName, client, commentOnClean, commentOnDirty, dirtyLabel, removeOnDirtyLabel, retryAfter, retryMax, } = context;
         if (retryMax <= 0) {
             core.warning("reached maximum allowed retries");
             return {};
@@ -7672,8 +7674,6 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
             return {};
         }
         let dirtyStatuses = {};
-        let dirtyComment = commentOnDirty();
-        let cleanComment = commentOnClean();
         for (const pullRequest of pullRequests) {
             core.debug(JSON.stringify(pullRequest, null, 2));
             const info = (message) => core.info(`for PR "${pullRequest.title}": ${message}`);
@@ -7687,16 +7687,16 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
                             ? removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
                             : Promise.resolve(false),
                     ]);
-                    if (dirtyComment !== "" && addedDirtyLabel) {
-                        yield addComment(dirtyComment, pullRequest, { client });
+                    if (commentOnDirty !== "" && addedDirtyLabel) {
+                        yield addComment(commentOnDirty, pullRequest, { client });
                     }
                     dirtyStatuses[pullRequest.number] = true;
                     break;
                 case "MERGEABLE":
                     info(`remove "${dirtyLabel}"`);
                     const removedDirtyLabel = yield removeLabelIfExists(dirtyLabel, pullRequest, { client });
-                    if (removedDirtyLabel && cleanComment !== "") {
-                        yield addComment(cleanComment, pullRequest, { client });
+                    if (removedDirtyLabel && commentOnClean !== "") {
+                        yield addComment(commentOnClean, pullRequest, { client });
                     }
                     // while we removed a particular label once we enter "CONFLICTING"
                     // we don't add it again because we assume that the removeOnDirtyLabel
