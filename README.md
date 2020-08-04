@@ -11,12 +11,10 @@ name: "Maintenance"
 on:
   # So that PRs touching the same files as the push are updated
   push:
-  # So that the `dirtyLabel` is removed if conflicts are resolved
-  # WARNING: PRs from forks don't have access to screts.
-  # You might want to skip this action on pull_requests which means
-  # the label might not reflect the current state of the PR until
-  # another push on `main`
-  pull_request:
+  # So that the `dirtyLabel` is removed if conflicts are resolve
+  # We recommend `pull_request_target` so that github secrets are available.
+  # In `pull_request` we wouldn't be able to change labels of fork PRs
+  pull_request_target:
     types: [synchronize]
 
 jobs:
