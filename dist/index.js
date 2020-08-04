@@ -7738,8 +7738,8 @@ function addLabelIfNotExists(labelName, issue, { client }) {
         const hasLabel = issue.labels.nodes.find((labe) => {
             return labe.name === labelName;
         }) !== undefined;
-        core.info(`Issue #${issue.number} already has label '${labelName}'. Skipping.`);
         if (hasLabel) {
+            core.info(`Issue #${issue.number} already has label '${labelName}'. No need to add.`);
             return false;
         }
         return yield client.issues
@@ -7768,6 +7768,7 @@ function removeLabelIfExists(labelName, issue, { client }) {
             return labe.name === labelName;
         }) !== undefined;
         if (!hasLabel) {
+            core.info(`Issue #${issue.number} does not have label '${labelName}'. No need to remove.`);
             return false;
         }
         return client.issues

@@ -240,11 +240,10 @@ async function addLabelIfNotExists(
 			return labe.name === labelName;
 		}) !== undefined;
 
-	core.info(
-		`Issue #${issue.number} already has label '${labelName}'. Skipping.`
-	);
-
 	if (hasLabel) {
+		core.info(
+			`Issue #${issue.number} already has label '${labelName}'. No need to add.`
+		);
 		return false;
 	}
 
@@ -284,6 +283,9 @@ async function removeLabelIfExists(
 			return labe.name === labelName;
 		}) !== undefined;
 	if (!hasLabel) {
+		core.info(
+			`Issue #${issue.number} does not have label '${labelName}'. No need to remove.`
+		);
 		return false;
 	}
 
