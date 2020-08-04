@@ -1,6 +1,6 @@
 # Changelog
 
-## unreleased
+## 2.0.0
 
 - Only update PRs based off of the branch in the `push` event
   Previously we checked every open PR.
