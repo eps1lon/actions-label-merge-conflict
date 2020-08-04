@@ -7640,6 +7640,11 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
         permalink
         title
         updatedAt
+        labels(first: 100) {
+          nodes {
+            name
+          }
+        }
       }
       pageInfo {
         endCursor
@@ -7676,25 +7681,23 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
                 case "CONFLICTING":
                     info(`add "${dirtyLabel}", remove "${removeOnDirtyLabel ? removeOnDirtyLabel : `nothing`}"`);
                     // for labels PRs and issues are the same
-                    yield Promise.all([
+                    const [addedDirtyLabel] = yield Promise.all([
                         addLabelIfNotExists(dirtyLabel, pullRequest, { client }),
                         removeOnDirtyLabel
                             ? removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
-                            : Promise.resolve(),
-                        dirtyComment !== ""
-                            ? addComment(dirtyComment, pullRequest, { client })
-                            : Promise.resolve(),
+                            : Promise.resolve(false),
                     ]);
+                    if (dirtyComment !== "" && addedDirtyLabel) {
+                        yield addComment(dirtyComment, pullRequest, { client });
+                    }
                     dirtyStatuses[pullRequest.number] = true;
                     break;
                 case "MERGEABLE":
                     info(`remove "${dirtyLabel}"`);
-                    yield Promise.all([
-                        removeLabelIfExists(dirtyLabel, pullRequest, { client }),
-                        cleanComment !== ""
-                            ? addComment(cleanComment, pullRequest, { client })
-                            : Promise.resolve(),
-                    ]);
+                    const removedDirtyLabel = yield removeLabelIfExists(dirtyLabel, pullRequest, { client });
+                    if (removedDirtyLabel && cleanComment !== "") {
+                        yield addComment(cleanComment, pullRequest, { client });
+                    }
                     // while we removed a particular label once we enter "CONFLICTING"
                     // we don't add it again because we assume that the removeOnDirtyLabel
                     // is used to mark a PR as "merge!".
@@ -7726,62 +7729,69 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
     });
 }
 /**
- * Assumes that the issue exists
+ * Assumes that the label exists
+ * @returns `true` if the label was added, `false` otherwise (e.g. when it already exists)
  */
-function addLabelIfNotExists(label, { number }, { client }) {
+function addLabelIfNotExists(labelName, issue, { client }) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { data: issue } = yield client.issues.get({
-            owner: github.context.repo.owner,
-            repo: github.context.repo.repo,
-            issue_number: number,
-        });
         core.debug(JSON.stringify(issue, null, 2));
-        const hasLabel = issue.labels.find((issueLabel) => {
-            return issueLabel.name === label;
+        const hasLabel = issue.labels.nodes.find((labe) => {
+            return labe.name === labelName;
         }) !== undefined;
-        core.info(`Issue #${number} already has label '${label}'. Skipping.`);
         if (hasLabel) {
-            return;
+            core.info(`Issue #${issue.number} already has label '${labelName}'. No need to add.`);
+            return false;
         }
-        yield client.issues
+        return yield client.issues
             .addLabels({
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
-            issue_number: number,
-            labels: [label],
+            issue_number: issue.number,
+            labels: [labelName],
         })
-            .catch((error) => {
+            .then(() => true, (error) => {
             if ((error.status === 403 || error.status === 404) &&
                 continueOnMissingPermissions() &&
                 error.message.endsWith(`Resource not accessible by integration`)) {
-                core.warning(`could not add label "${label}": ${commonErrorDetailedMessage}`);
+                core.warning(`could not add label "${labelName}": ${commonErrorDetailedMessage}`);
             }
             else {
-                throw new Error(`error adding "${label}": ${error}`);
+                throw new Error(`error adding "${labelName}": ${error}`);
             }
+            return false;
         });
     });
 }
-function removeLabelIfExists(label, { number }, { client }) {
-    return client.issues
-        .removeLabel({
-        owner: github.context.repo.owner,
-        repo: github.context.repo.repo,
-        issue_number: number,
-        name: label,
-    })
-        .catch((error) => {
-        if ((error.status === 403 || error.status === 404) &&
-            continueOnMissingPermissions() &&
-            error.message.endsWith(`Resource not accessible by integration`)) {
-            core.warning(`could not remove label "${label}": ${commonErrorDetailedMessage}`);
+function removeLabelIfExists(labelName, issue, { client }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const hasLabel = issue.labels.nodes.find((labe) => {
+            return labe.name === labelName;
+        }) !== undefined;
+        if (!hasLabel) {
+            core.info(`Issue #${issue.number} does not have label '${labelName}'. No need to remove.`);
+            return false;
         }
-        else if (error.status !== 404) {
-            throw new Error(`error removing "${label}": ${error}`);
-        }
-        else {
-            core.info(`On #${number} label "${label}" doesn't need to be removed since it doesn't exist on that issue.`);
-        }
+        return client.issues
+            .removeLabel({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            issue_number: issue.number,
+            name: labelName,
+        })
+            .then(() => true, (error) => {
+            if ((error.status === 403 || error.status === 404) &&
+                continueOnMissingPermissions() &&
+                error.message.endsWith(`Resource not accessible by integration`)) {
+                core.warning(`could not remove label "${labelName}": ${commonErrorDetailedMessage}`);
+            }
+            else if (error.status !== 404) {
+                throw new Error(`error removing "${labelName}": ${error}`);
+            }
+            else {
+                core.info(`On #${issue.number} label "${labelName}" doesn't need to be removed since it doesn't exist on that issue.`);
+            }
+            return false;
+        });
     });
 }
 function addComment(comment, { number }, { client }) {

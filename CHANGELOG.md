@@ -6,6 +6,7 @@
   Previously we checked every open PR.
   Since a `push` to a branch can only create merge conflicts with that branch we can limit the set of checked PRs.
   This should help repositories with lots of PRs targetting different branches with rate limiting.
+- Only leave comments if the `dirtyLabel` was added or removed
 
 ## 1.4.0
 
