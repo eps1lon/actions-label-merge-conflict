@@ -5,6 +5,17 @@ type GitHub = ReturnType<typeof github.getOctokit>;
 const prDirtyStatusesOutputKey = `prDirtyStatuses`;
 const commonErrorDetailedMessage = `Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`;
 
+/**
+ * returns `null` if the ref isn't a branch but e.g. a tag
+ * @param ref
+ */
+function getBranchName(ref: string): string | null {
+	if (ref.startsWith("refs/heads/")) {
+		return ref.replace(/^refs\/heads\//, "");
+	}
+	return null;
+}
+
 async function main() {
 	const repoToken = core.getInput("repoToken", { required: true });
 	const dirtyLabel = core.getInput("dirtyLabel", { required: true });
@@ -12,9 +23,14 @@ async function main() {
 	const retryAfter = parseInt(core.getInput("retryAfter") || "120", 10);
 	const retryMax = parseInt(core.getInput("retryMax") || "5", 10);
 
+	const isPushEvent = process.env.GITHUB_EVENT_NAME === "push";
+	core.debug(`isPushEvent = ${process.env.GITHUB_EVENT_NAME} === "push"`);
+	const baseRefName = isPushEvent ? getBranchName(github.context.ref) : null;
+
 	const client = github.getOctokit(repoToken);
 
 	await checkDirty({
+		baseRefName,
 		client,
 		dirtyLabel,
 		removeOnDirtyLabel,
@@ -32,6 +48,7 @@ const commentOnClean = () => core.getInput("commentOnClean");
 
 interface CheckDirtyContext {
 	after: string | null;
+	baseRefName: string | null;
 	client: GitHub;
 	dirtyLabel: string;
 	removeOnDirtyLabel: string;
@@ -48,6 +65,7 @@ async function checkDirty(
 ): Promise<Record<number, boolean>> {
 	const {
 		after,
+		baseRefName,
 		client,
 		dirtyLabel,
 		removeOnDirtyLabel,
@@ -64,9 +82,9 @@ async function checkDirty(
 		repository: any;
 	}
 	const query = `
-query openPullRequests($owner: String!, $repo: String!, $after: String) { 
+query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRefName: String) { 
   repository(owner:$owner, name: $repo) { 
-    pullRequests(first:100, after:$after, states: OPEN) {
+    pullRequests(first: 100, after: $after, states: OPEN, baseRefName: $baseRefName) {
       nodes {
         mergeable
         number
@@ -90,6 +108,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
 			//accept: "application/vnd.github.merge-info-preview+json"
 		},
 		after,
+		baseRefName,
 		owner: github.context.repo.owner,
 		repo: github.context.repo.repo,
 	});

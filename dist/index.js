@@ -7588,6 +7588,16 @@ const core = __importStar(__webpack_require__(470));
 const github = __importStar(__webpack_require__(469));
 const prDirtyStatusesOutputKey = `prDirtyStatuses`;
 const commonErrorDetailedMessage = `Worflows can't access secrets and have read-only access to upstream when they are triggered by a pull request from a fork, [more information](https://docs.github.com/en/actions/configuring-and-managing-workflows/authenticating-with-the-github_token#permissions-for-the-github_token)`;
+/**
+ * returns `null` if the ref isn't a branch but e.g. a tag
+ * @param ref
+ */
+function getBranchName(ref) {
+    if (ref.startsWith("refs/heads/")) {
+        return ref.replace(/^refs\/heads\//, "");
+    }
+    return null;
+}
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         const repoToken = core.getInput("repoToken", { required: true });
@@ -7595,8 +7605,12 @@ function main() {
         const removeOnDirtyLabel = core.getInput("removeOnDirtyLabel");
         const retryAfter = parseInt(core.getInput("retryAfter") || "120", 10);
         const retryMax = parseInt(core.getInput("retryMax") || "5", 10);
+        const isPushEvent = process.env.GITHUB_EVENT_NAME === "push";
+        core.debug(`isPushEvent = ${process.env.GITHUB_EVENT_NAME} === "push"`);
+        const baseRefName = isPushEvent ? getBranchName(github.context.ref) : null;
         const client = github.getOctokit(repoToken);
         yield checkDirty({
+            baseRefName,
             client,
             dirtyLabel,
             removeOnDirtyLabel,
@@ -7611,15 +7625,15 @@ const commentOnDirty = () => core.getInput("commentOnDirty");
 const commentOnClean = () => core.getInput("commentOnClean");
 function checkDirty(context) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { after, client, dirtyLabel, removeOnDirtyLabel, retryAfter, retryMax, } = context;
+        const { after, baseRefName, client, dirtyLabel, removeOnDirtyLabel, retryAfter, retryMax, } = context;
         if (retryMax <= 0) {
             core.warning("reached maximum allowed retries");
             return {};
         }
         const query = `
-query openPullRequests($owner: String!, $repo: String!, $after: String) { 
+query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRefName: String) { 
   repository(owner:$owner, name: $repo) { 
-    pullRequests(first:100, after:$after, states: OPEN) {
+    pullRequests(first: 100, after: $after, states: OPEN, baseRefName: $baseRefName) {
       nodes {
         mergeable
         number
@@ -7643,6 +7657,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String) {
             //accept: "application/vnd.github.merge-info-preview+json"
             },
             after,
+            baseRefName,
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
         });
