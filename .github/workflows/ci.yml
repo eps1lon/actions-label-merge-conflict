@@ -34,7 +34,7 @@ jobs:
       - name: Test (PR)
         # Add your repository and branch here to test your changes
         # e.g. eps1lon/actions-label-merge-conflict@feat/retry-unknown
-        uses: ./
+        uses: eps1lon/actions-label-merge-conflict@feat/comment-changed
         with:
           # pull_requests don't have access to secrets
           continueOnMissingPermissions: "${{ github.event.action == 'synchronize' }}"
