@@ -140,25 +140,27 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 					}"`
 				);
 				// for labels PRs and issues are the same
-				await Promise.all([
+				const [addedDirtyLabel] = await Promise.all([
 					addLabelIfNotExists(dirtyLabel, pullRequest, { client }),
 					removeOnDirtyLabel
 						? removeLabelIfExists(removeOnDirtyLabel, pullRequest, { client })
-						: Promise.resolve(),
-					dirtyComment !== ""
-						? addComment(dirtyComment, pullRequest, { client })
-						: Promise.resolve(),
+						: Promise.resolve(false),
 				]);
+				if (dirtyComment !== "" && addedDirtyLabel) {
+					await addComment(dirtyComment, pullRequest, { client });
+				}
 				dirtyStatuses[pullRequest.number] = true;
 				break;
 			case "MERGEABLE":
 				info(`remove "${dirtyLabel}"`);
-				await Promise.all([
-					removeLabelIfExists(dirtyLabel, pullRequest, { client }),
-					cleanComment !== ""
-						? addComment(cleanComment, pullRequest, { client })
-						: Promise.resolve(),
-				]);
+				const removedDirtyLabel = await removeLabelIfExists(
+					dirtyLabel,
+					pullRequest,
+					{ client }
+				);
+				if (removedDirtyLabel && cleanComment !== "") {
+					await addComment(cleanComment, pullRequest, { client });
+				}
 				// while we removed a particular label once we enter "CONFLICTING"
 				// we don't add it again because we assume that the removeOnDirtyLabel
 				// is used to mark a PR as "merge!".
@@ -201,13 +203,14 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 }
 
 /**
- * Assumes that the issue exists
+ * Assumes that the label exists
+ * @returns `true` if the label was added, `false` otherwise (e.g. when it already exists)
  */
 async function addLabelIfNotExists(
 	label: string,
 	{ number }: { number: number },
 	{ client }: { client: GitHub }
-) {
+): Promise<boolean> {
 	const { data: issue } = await client.issues.get({
 		owner: github.context.repo.owner,
 		repo: github.context.repo.repo,
@@ -224,36 +227,40 @@ async function addLabelIfNotExists(
 	core.info(`Issue #${number} already has label '${label}'. Skipping.`);
 
 	if (hasLabel) {
-		return;
+		return false;
 	}
 
-	await client.issues
+	return await client.issues
 		.addLabels({
 			owner: github.context.repo.owner,
 			repo: github.context.repo.repo,
 			issue_number: number,
 			labels: [label],
 		})
-		.catch((error) => {
-			if (
-				(error.status === 403 || error.status === 404) &&
-				continueOnMissingPermissions() &&
-				error.message.endsWith(`Resource not accessible by integration`)
-			) {
-				core.warning(
-					`could not add label "${label}": ${commonErrorDetailedMessage}`
-				);
-			} else {
-				throw new Error(`error adding "${label}": ${error}`);
+		.then(
+			() => true,
+			(error) => {
+				if (
+					(error.status === 403 || error.status === 404) &&
+					continueOnMissingPermissions() &&
+					error.message.endsWith(`Resource not accessible by integration`)
+				) {
+					core.warning(
+						`could not add label "${label}": ${commonErrorDetailedMessage}`
+					);
+				} else {
+					throw new Error(`error adding "${label}": ${error}`);
+				}
+				return false;
 			}
-		});
+		);
 }
 
-function removeLabelIfExists(
+async function removeLabelIfExists(
 	label: string,
 	{ number }: { number: number },
 	{ client }: { client: GitHub }
-) {
+): Promise<boolean> {
 	return client.issues
 		.removeLabel({
 			owner: github.context.repo.owner,
@@ -261,23 +268,27 @@ function removeLabelIfExists(
 			issue_number: number,
 			name: label,
 		})
-		.catch((error) => {
-			if (
-				(error.status === 403 || error.status === 404) &&
-				continueOnMissingPermissions() &&
-				error.message.endsWith(`Resource not accessible by integration`)
-			) {
-				core.warning(
-					`could not remove label "${label}": ${commonErrorDetailedMessage}`
-				);
-			} else if (error.status !== 404) {
-				throw new Error(`error removing "${label}": ${error}`);
-			} else {
-				core.info(
-					`On #${number} label "${label}" doesn't need to be removed since it doesn't exist on that issue.`
-				);
+		.then(
+			() => true,
+			(error) => {
+				if (
+					(error.status === 403 || error.status === 404) &&
+					continueOnMissingPermissions() &&
+					error.message.endsWith(`Resource not accessible by integration`)
+				) {
+					core.warning(
+						`could not remove label "${label}": ${commonErrorDetailedMessage}`
+					);
+				} else if (error.status !== 404) {
+					throw new Error(`error removing "${label}": ${error}`);
+				} else {
+					core.info(
+						`On #${number} label "${label}" doesn't need to be removed since it doesn't exist on that issue.`
+					);
+				}
+				return false;
 			}
-		});
+		);
 }
 
 async function addComment(
