@@ -3,6 +3,9 @@ on:
   # So that PRs touching the same files as the push are updated
   push:
   # So that the `dirtyLabel` is removed if conflicts are resolved
+  pull_request_target:
+    types: [synchronize]
+  # For integration testing of fork PRs
   pull_request:
     types: [synchronize]
 
