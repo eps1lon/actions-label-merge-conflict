@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1
+
+- Improve retry logic ([#31](https://github.com/eps1lon/actions-label-merge-conflict/pull/31) by @eps1lon)
+
 ## 2.0.0
 
 - Only update PRs based off of the branch in the `push` event
