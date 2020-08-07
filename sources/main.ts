@@ -31,7 +31,7 @@ async function main() {
 
 	const client = github.getOctokit(repoToken);
 
-	await checkDirty({
+	const dirtyStatuses = await checkDirty({
 		baseRefName,
 		client,
 		commentOnClean,
@@ -42,6 +42,8 @@ async function main() {
 		retryAfter,
 		retryMax,
 	});
+
+	core.setOutput(prDirtyStatusesOutputKey, dirtyStatuses);
 }
 
 const continueOnMissingPermissions = () =>
@@ -194,18 +196,20 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 				break;
 			case "UNKNOWN":
 				info(`Retrying after ${retryAfter}s.`);
-				await new Promise((resolve) => {
+				return new Promise((resolve) => {
 					setTimeout(() => {
 						core.info(`retrying with ${retryMax} retries remaining.`);
-						resolve(async () => {
-							dirtyStatuses = {
-								...dirtyStatuses,
-								...(await checkDirty({ ...context, retryMax: retryMax - 1 })),
-							};
-						});
+
+						checkDirty({ ...context, retryMax: retryMax - 1 }).then(
+							(newDirtyStatuses) => {
+								resolve({
+									...dirtyStatuses,
+									...newDirtyStatuses,
+								});
+							}
+						);
 					}, retryAfter * 1000);
 				});
-				break;
 			default:
 				throw new TypeError(
 					`unhandled mergeable state '${pullRequest.mergeable}'`
@@ -214,15 +218,13 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 	}
 
 	if (pageInfo.hasNextPage) {
-		dirtyStatuses = {
+		return {
 			...dirtyStatuses,
 			...(await checkDirty({
 				...context,
 				after: pageInfo.endCursor,
 			})),
 		};
-	} else {
-		core.setOutput(prDirtyStatusesOutputKey, dirtyStatuses);
 	}
 	return dirtyStatuses;
 }
