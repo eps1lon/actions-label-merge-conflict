@@ -7611,7 +7611,7 @@ function main() {
         core.debug(`isPushEvent = ${process.env.GITHUB_EVENT_NAME} === "push"`);
         const baseRefName = isPushEvent ? getBranchName(github.context.ref) : null;
         const client = github.getOctokit(repoToken);
-        yield checkDirty({
+        const dirtyStatuses = yield checkDirty({
             baseRefName,
             client,
             commentOnClean,
@@ -7622,6 +7622,7 @@ function main() {
             retryAfter,
             retryMax,
         });
+        core.setOutput(prDirtyStatusesOutputKey, dirtyStatuses);
     });
 }
 const continueOnMissingPermissions = () => core.getInput("continueOnMissingPermissions") === "true" || false;
@@ -7706,24 +7707,20 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
                     break;
                 case "UNKNOWN":
                     info(`Retrying after ${retryAfter}s.`);
-                    yield new Promise((resolve) => {
+                    return new Promise((resolve) => {
                         setTimeout(() => {
                             core.info(`retrying with ${retryMax} retries remaining.`);
-                            resolve(() => __awaiter(this, void 0, void 0, function* () {
-                                dirtyStatuses = Object.assign(Object.assign({}, dirtyStatuses), (yield checkDirty(Object.assign(Object.assign({}, context), { retryMax: retryMax - 1 }))));
-                            }));
+                            checkDirty(Object.assign(Object.assign({}, context), { retryMax: retryMax - 1 })).then((newDirtyStatuses) => {
+                                resolve(Object.assign(Object.assign({}, dirtyStatuses), newDirtyStatuses));
+                            });
                         }, retryAfter * 1000);
                     });
-                    break;
                 default:
                     throw new TypeError(`unhandled mergeable state '${pullRequest.mergeable}'`);
             }
         }
         if (pageInfo.hasNextPage) {
-            dirtyStatuses = Object.assign(Object.assign({}, dirtyStatuses), (yield checkDirty(Object.assign(Object.assign({}, context), { after: pageInfo.endCursor }))));
-        }
-        else {
-            core.setOutput(prDirtyStatusesOutputKey, dirtyStatuses);
+            return Object.assign(Object.assign({}, dirtyStatuses), (yield checkDirty(Object.assign(Object.assign({}, context), { after: pageInfo.endCursor }))));
         }
         return dirtyStatuses;
     });
