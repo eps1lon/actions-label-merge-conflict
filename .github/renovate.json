@@ -1,0 +1,11 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"extends": ["config:base"],
+	"automerge": false,
+	"dependencyDashboard": true,
+	"labels": ["dependencies"],
+	"prConcurrentLimit": 30,
+	"prHourlyLimit": 0,
+	"schedule": "before 6:00am on the first day of the month",
+	"timezone": "UTC"
+}
