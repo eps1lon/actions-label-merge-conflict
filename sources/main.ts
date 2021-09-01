@@ -336,7 +336,7 @@ async function addComment(
 			issue_number: number,
 			body: comment,
 		});
-	} catch (error) {
+	} catch (error: any) {
 		if (
 			(error.status === 403 || error.status === 404) &&
 			continueOnMissingPermissions() &&
