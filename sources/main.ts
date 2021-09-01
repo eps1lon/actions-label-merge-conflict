@@ -29,6 +29,7 @@ async function main() {
 	core.debug(`isPushEvent = ${process.env.GITHUB_EVENT_NAME} === "push"`);
 	const baseRefName = isPushEvent ? getBranchName(github.context.ref) : null;
 
+	const triggerPRNumber:number | null = (!isPushEvent && Number(github.context.payload.pull_request?.number)) || null;
 	const client = github.getOctokit(repoToken);
 
 	const dirtyStatuses = await checkDirty({
@@ -41,6 +42,7 @@ async function main() {
 		after: null,
 		retryAfter,
 		retryMax,
+		triggerPRNumber
 	});
 
 	core.setOutput(prDirtyStatusesOutputKey, dirtyStatuses);
@@ -57,6 +59,7 @@ interface CheckDirtyContext {
 	commentOnDirty: string;
 	dirtyLabel: string;
 	removeOnDirtyLabel: string;
+	triggerPRNumber: number | null
 	/**
 	 * number of seconds after which the mergable state is re-checked
 	 * if it is unknown
@@ -78,6 +81,7 @@ async function checkDirty(
 		removeOnDirtyLabel,
 		retryAfter,
 		retryMax,
+		triggerPRNumber
 	} = context;
 
 	if (retryMax <= 0) {
@@ -147,13 +151,17 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 			pullRequests: { nodes: pullRequests, pageInfo },
 		},
 	} = pullsResponse as RepositoryResponse;
+
 	core.debug(JSON.stringify(pullsResponse, null, 2));
 
-	if (pullRequests.length === 0) {
+	const filteredPullRequests = triggerPRNumber? pullRequests.filter(({number})=> number === triggerPRNumber) : pullRequests
+
+	if (filteredPullRequests.length === 0) {
 		return {};
 	}
 	let dirtyStatuses: Record<number, boolean> = {};
-	for (const pullRequest of pullRequests) {
+
+	for (const pullRequest of filteredPullRequests) {
 		core.debug(JSON.stringify(pullRequest, null, 2));
 
 		const info = (message: string) =>

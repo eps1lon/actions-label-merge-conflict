@@ -39,6 +39,7 @@ PRs are usually open for a few days until a maintainer can take a look. When thi
 
 This actions achieve this with minimal noise (no comment bloat) by adding a label to a PR if it has merge conflicts. This means the author has a single overview of which PRs need a rebase by using their list of created PRs. At the same time the maintainer has a simple filter for PRs that have merge conflicts.
 
+When action triggered by `pull_request_target` hook, only this PR would be processed. If it's triggered by `push` hook, all open PR\s would be processed
 ### Motivation
 
 - [isaacs/github#224: Notify when merge conflict arises](https://github.com/isaacs/github/issues/224)
