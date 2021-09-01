@@ -252,7 +252,7 @@ async function addLabelIfNotExists(
 		return false;
 	}
 
-	return await client.issues
+	return await client.rest.issues
 		.addLabels({
 			owner: github.context.repo.owner,
 			repo: github.context.repo.repo,
@@ -294,7 +294,7 @@ async function removeLabelIfExists(
 		return false;
 	}
 
-	return client.issues
+	return client.rest.issues
 		.removeLabel({
 			owner: github.context.repo.owner,
 			repo: github.context.repo.repo,
@@ -330,7 +330,7 @@ async function addComment(
 	{ client }: { client: GitHub }
 ): Promise<void> {
 	try {
-		await client.issues.createComment({
+		await client.rest.issues.createComment({
 			owner: github.context.repo.owner,
 			repo: github.context.repo.repo,
 			issue_number: number,
