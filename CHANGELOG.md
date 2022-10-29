@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.1.0
+
+- Address set-output deprecation ([#92](https://github.com/eps1lon/actions-label-merge-conflict/pull/92) by @NotMyFault)
+- Fix CVE-2022-35954 ([#92](https://github.com/eps1lon/actions-label-merge-conflict/pull/92) by @NotMyFault)
 ## 2.0.1
 
 - Improve retry logic ([#31](https://github.com/eps1lon/actions-label-merge-conflict/pull/31) by @eps1lon)
