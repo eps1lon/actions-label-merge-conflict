@@ -28,13 +28,13 @@ async function main() {
 	const isPushEvent = process.env.GITHUB_EVENT_NAME === "push";
 	core.debug(`isPushEvent = ${isPushEvent}`);
 
-	const baseRefName = isPushEvent ? getBranchName(github.context.ref) : null;
-	core.debug(`baseRefName = ${baseRefName}`);
+	const headRefName = isPushEvent ? getBranchName(github.context.ref) : null;
+	core.debug(`headRefName = ${headRefName}`);
 
 	const client = github.getOctokit(repoToken);
 
 	const dirtyStatuses = await checkDirty({
-		baseRefName,
+		headRefName,
 		client,
 		commentOnClean,
 		commentOnDirty,
@@ -53,7 +53,7 @@ const continueOnMissingPermissions = () =>
 
 interface CheckDirtyContext {
 	after: string | null;
-	baseRefName: string | null;
+	headRefName: string | null;
 	client: GitHub;
 	commentOnClean: string;
 	commentOnDirty: string;
@@ -72,7 +72,7 @@ async function checkDirty(
 ): Promise<Record<number, boolean>> {
 	const {
 		after,
-		baseRefName,
+		headRefName,
 		client,
 		commentOnClean,
 		commentOnDirty,
@@ -110,14 +110,16 @@ async function checkDirty(
 		};
 	}
 	const query = `
-query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRefName: String) { 
+query openPullRequests($owner: String!, $repo: String!, $after: String, $headRefName: String) { 
   repository(owner:$owner, name: $repo) { 
-    pullRequests(first: 100, after: $after, states: OPEN, baseRefName: $baseRefName) {
+    pullRequests(first: 100, after: $after, states: OPEN, headRefName: $headRefName) {
       nodes {
         mergeable
         number
         permalink
         title
+		baseRefName
+		headRefName
         updatedAt
         labels(first: 100) {
           nodes {
@@ -146,7 +148,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 			//accept: "application/vnd.github.merge-info-preview+json"
 		},
 		after,
-		baseRefName,
+		headRefName,
 		owner,
 		repo,
 	});

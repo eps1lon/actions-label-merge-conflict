@@ -6382,11 +6382,11 @@ function main() {
         const commentOnClean = core.getInput("commentOnClean");
         const isPushEvent = process.env.GITHUB_EVENT_NAME === "push";
         core.debug(`isPushEvent = ${isPushEvent}`);
-        const baseRefName = isPushEvent ? getBranchName(github.context.ref) : null;
-        core.debug(`baseRefName = ${baseRefName}`);
+        const headRefName = isPushEvent ? getBranchName(github.context.ref) : null;
+        core.debug(`headRefName = ${headRefName}`);
         const client = github.getOctokit(repoToken);
         const dirtyStatuses = yield checkDirty({
-            baseRefName,
+            headRefName,
             client,
             commentOnClean,
             commentOnDirty,
@@ -6402,21 +6402,23 @@ function main() {
 const continueOnMissingPermissions = () => core.getInput("continueOnMissingPermissions") === "true" || false;
 function checkDirty(context) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { after, baseRefName, client, commentOnClean, commentOnDirty, dirtyLabel, removeOnDirtyLabel, retryAfter, retryMax, } = context;
+        const { after, headRefName, client, commentOnClean, commentOnDirty, dirtyLabel, removeOnDirtyLabel, retryAfter, retryMax, } = context;
         core.debug(`context: ${JSON.stringify(context, null, 2)}`);
         if (retryMax <= 0) {
             core.warning("reached maximum allowed retries");
             return {};
         }
         const query = `
-query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRefName: String) { 
+query openPullRequests($owner: String!, $repo: String!, $after: String, $headRefName: String) { 
   repository(owner:$owner, name: $repo) { 
-    pullRequests(first: 100, after: $after, states: OPEN, baseRefName: $baseRefName) {
+    pullRequests(first: 100, after: $after, states: OPEN, headRefName: $headRefName) {
       nodes {
         mergeable
         number
         permalink
         title
+		baseRefName
+		headRefName
         updatedAt
         labels(first: 100) {
           nodes {
@@ -6444,7 +6446,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
             //accept: "application/vnd.github.merge-info-preview+json"
             },
             after,
-            baseRefName,
+            headRefName,
             owner,
             repo,
         });
