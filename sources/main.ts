@@ -26,9 +26,11 @@ async function main() {
 	const commentOnClean = core.getInput("commentOnClean");
 
 	const isPushEvent = process.env.GITHUB_EVENT_NAME === "push";
-	core.debug(`isPushEvent = ${process.env.GITHUB_EVENT_NAME} === "push"`);
+	core.debug(`isPushEvent = ${isPushEvent}`);
+	
 	const baseRefName = isPushEvent ? getBranchName(github.context.ref) : null;
-
+	core.debug(`baseRefName = ${baseRefName}`);
+	
 	const client = github.getOctokit(repoToken);
 
 	const dirtyStatuses = await checkDirty({
@@ -129,7 +131,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
   }
 }
   `;
-	core.debug(query);
+	core.debug(`query: ${query}`);
 	const pullsResponse = await client.graphql(query, {
 		headers: {
 			// merge-info preview causes mergeable to become "UNKNOW" (from "CONFLICTING")
@@ -147,7 +149,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 			pullRequests: { nodes: pullRequests, pageInfo },
 		},
 	} = pullsResponse as RepositoryResponse;
-	core.debug(JSON.stringify(pullsResponse, null, 2));
+	core.debug(`pullsResponse: ${JSON.stringify(pullsResponse, null, 2)}`);
 
 	if (pullRequests.length === 0) {
 		return {};
