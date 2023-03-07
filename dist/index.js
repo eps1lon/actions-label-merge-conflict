@@ -6403,6 +6403,7 @@ const continueOnMissingPermissions = () => core.getInput("continueOnMissingPermi
 function checkDirty(context) {
     return __awaiter(this, void 0, void 0, function* () {
         const { after, baseRefName, client, commentOnClean, commentOnDirty, dirtyLabel, removeOnDirtyLabel, retryAfter, retryMax, } = context;
+        core.debug(`context: ${JSON.stringify(context, null, 2)}`);
         if (retryMax <= 0) {
             core.warning("reached maximum allowed retries");
             return {};
@@ -6432,6 +6433,10 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 }
   `;
         core.debug(`query: ${query}`);
+        const owner = github.context.repo.owner;
+        const repo = github.context.repo.repo;
+        core.debug(`owner: ${owner}`);
+        core.debug(`repo: ${repo}`);
         const pullsResponse = yield client.graphql(query, {
             headers: {
             // merge-info preview causes mergeable to become "UNKNOW" (from "CONFLICTING")
@@ -6440,12 +6445,13 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
             },
             after,
             baseRefName,
-            owner: github.context.repo.owner,
-            repo: github.context.repo.repo,
+            owner,
+            repo,
         });
         const { repository: { pullRequests: { nodes: pullRequests, pageInfo }, }, } = pullsResponse;
         core.debug(`pullsResponse: ${JSON.stringify(pullsResponse, null, 2)}`);
         if (pullRequests.length === 0) {
+            core.debug(`pullRequests was empty.`);
             return {};
         }
         let dirtyStatuses = {};

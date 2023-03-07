@@ -27,10 +27,10 @@ async function main() {
 
 	const isPushEvent = process.env.GITHUB_EVENT_NAME === "push";
 	core.debug(`isPushEvent = ${isPushEvent}`);
-	
+
 	const baseRefName = isPushEvent ? getBranchName(github.context.ref) : null;
 	core.debug(`baseRefName = ${baseRefName}`);
-	
+
 	const client = github.getOctokit(repoToken);
 
 	const dirtyStatuses = await checkDirty({
@@ -82,6 +82,8 @@ async function checkDirty(
 		retryMax,
 	} = context;
 
+	core.debug(`context: ${JSON.stringify(context, null, 2)}`);
+
 	if (retryMax <= 0) {
 		core.warning("reached maximum allowed retries");
 		return {};
@@ -132,6 +134,11 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 }
   `;
 	core.debug(`query: ${query}`);
+	const owner = github.context.repo.owner;
+	const repo = github.context.repo.repo;
+	core.debug(`owner: ${owner}`);
+	core.debug(`repo: ${repo}`);
+
 	const pullsResponse = await client.graphql(query, {
 		headers: {
 			// merge-info preview causes mergeable to become "UNKNOW" (from "CONFLICTING")
@@ -140,8 +147,8 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 		},
 		after,
 		baseRefName,
-		owner: github.context.repo.owner,
-		repo: github.context.repo.repo,
+		owner,
+		repo,
 	});
 
 	const {
@@ -152,6 +159,8 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 	core.debug(`pullsResponse: ${JSON.stringify(pullsResponse, null, 2)}`);
 
 	if (pullRequests.length === 0) {
+		core.debug(`pullRequests was empty.`);
+
 		return {};
 	}
 	let dirtyStatuses: Record<number, boolean> = {};
