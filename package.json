@@ -11,7 +11,7 @@
 	"devDependencies": {
 		"@actions/core": "1.10.0",
 		"@actions/github": "5.1.1",
-		"@zeit/ncc": "0.22.3",
+		"@vercel/ncc": "0.38.1",
 		"prettier": "2.8.8",
 		"typescript": "4.5.5"
 	},
