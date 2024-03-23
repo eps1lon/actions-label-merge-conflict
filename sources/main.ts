@@ -26,13 +26,15 @@ async function main() {
 	const commentOnClean = core.getInput("commentOnClean");
 
 	const isPushEvent = process.env.GITHUB_EVENT_NAME === "push";
-	core.debug(`isPushEvent = ${process.env.GITHUB_EVENT_NAME} === "push"`);
-	const baseRefName = isPushEvent ? getBranchName(github.context.ref) : null;
+	core.debug(`isPushEvent = ${isPushEvent}`);
+
+	const headRefName = isPushEvent ? getBranchName(github.context.ref) : null;
+	core.debug(`headRefName = ${headRefName}`);
 
 	const client = github.getOctokit(repoToken);
 
 	const dirtyStatuses = await checkDirty({
-		baseRefName,
+		headRefName,
 		client,
 		commentOnClean,
 		commentOnDirty,
@@ -51,7 +53,7 @@ const continueOnMissingPermissions = () =>
 
 interface CheckDirtyContext {
 	after: string | null;
-	baseRefName: string | null;
+	headRefName: string | null;
 	client: GitHub;
 	commentOnClean: string;
 	commentOnDirty: string;
@@ -70,7 +72,7 @@ async function checkDirty(
 ): Promise<Record<number, boolean>> {
 	const {
 		after,
-		baseRefName,
+		headRefName,
 		client,
 		commentOnClean,
 		commentOnDirty,
@@ -79,6 +81,8 @@ async function checkDirty(
 		retryAfter,
 		retryMax,
 	} = context;
+
+	core.debug(`context: ${JSON.stringify(context, null, 2)}`);
 
 	if (retryMax <= 0) {
 		core.warning("reached maximum allowed retries");
@@ -106,14 +110,16 @@ async function checkDirty(
 		};
 	}
 	const query = `
-query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRefName: String) { 
+query openPullRequests($owner: String!, $repo: String!, $after: String, $headRefName: String) { 
   repository(owner:$owner, name: $repo) { 
-    pullRequests(first: 100, after: $after, states: OPEN, baseRefName: $baseRefName) {
+    pullRequests(first: 100, after: $after, states: OPEN, headRefName: $headRefName) {
       nodes {
         mergeable
         number
         permalink
         title
+		baseRefName
+		headRefName
         updatedAt
         labels(first: 100) {
           nodes {
@@ -129,7 +135,12 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
   }
 }
   `;
-	core.debug(query);
+	core.debug(`query: ${query}`);
+	const owner = github.context.repo.owner;
+	const repo = github.context.repo.repo;
+	core.debug(`owner: ${owner}`);
+	core.debug(`repo: ${repo}`);
+
 	const pullsResponse = await client.graphql(query, {
 		headers: {
 			// merge-info preview causes mergeable to become "UNKNOW" (from "CONFLICTING")
@@ -137,9 +148,9 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 			//accept: "application/vnd.github.merge-info-preview+json"
 		},
 		after,
-		baseRefName,
-		owner: github.context.repo.owner,
-		repo: github.context.repo.repo,
+		headRefName,
+		owner,
+		repo,
 	});
 
 	const {
@@ -147,9 +158,11 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 			pullRequests: { nodes: pullRequests, pageInfo },
 		},
 	} = pullsResponse as RepositoryResponse;
-	core.debug(JSON.stringify(pullsResponse, null, 2));
+	core.debug(`pullsResponse: ${JSON.stringify(pullsResponse, null, 2)}`);
 
 	if (pullRequests.length === 0) {
+		core.debug(`pullRequests was empty.`);
+
 		return {};
 	}
 	let dirtyStatuses: Record<number, boolean> = {};
