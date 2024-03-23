@@ -23,7 +23,7 @@ ouputs:
   prDirtyStatuses:
     description: "Object-map. The keys are pull request numbers and their values whether a PR is dirty or not."
 runs:
-  using: "node16"
+  using: "node20"
   main: "dist/index.js"
 author: "Sebastian Silbermann"
 branding:
