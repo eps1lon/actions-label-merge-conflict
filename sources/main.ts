@@ -66,7 +66,7 @@ interface CheckDirtyContext {
 	retryMax: number;
 }
 async function checkDirty(
-	context: CheckDirtyContext
+	context: CheckDirtyContext,
 ): Promise<Record<number, boolean>> {
 	const {
 		after,
@@ -164,7 +164,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 				info(
 					`add "${dirtyLabel}", remove "${
 						removeOnDirtyLabel ? removeOnDirtyLabel : `nothing`
-					}"`
+					}"`,
 				);
 				// for labels PRs and issues are the same
 				const [addedDirtyLabel] = await Promise.all([
@@ -183,7 +183,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 				const removedDirtyLabel = await removeLabelIfExists(
 					dirtyLabel,
 					pullRequest,
-					{ client }
+					{ client },
 				);
 				if (removedDirtyLabel && commentOnClean !== "") {
 					await addComment(commentOnClean, pullRequest, { client });
@@ -206,13 +206,13 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 									...dirtyStatuses,
 									...newDirtyStatuses,
 								});
-							}
+							},
 						);
 					}, retryAfter * 1000);
 				});
 			default:
 				throw new TypeError(
-					`unhandled mergeable state '${pullRequest.mergeable}'`
+					`unhandled mergeable state '${pullRequest.mergeable}'`,
 				);
 		}
 	}
@@ -236,7 +236,7 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
 async function addLabelIfNotExists(
 	labelName: string,
 	issue: { number: number; labels: { nodes: Array<{ name: string }> } },
-	{ client }: { client: GitHub }
+	{ client }: { client: GitHub },
 ): Promise<boolean> {
 	core.debug(JSON.stringify(issue, null, 2));
 
@@ -247,7 +247,7 @@ async function addLabelIfNotExists(
 
 	if (hasLabel) {
 		core.info(
-			`Issue #${issue.number} already has label '${labelName}'. No need to add.`
+			`Issue #${issue.number} already has label '${labelName}'. No need to add.`,
 		);
 		return false;
 	}
@@ -268,20 +268,20 @@ async function addLabelIfNotExists(
 					error.message.endsWith(`Resource not accessible by integration`)
 				) {
 					core.warning(
-						`could not add label "${labelName}": ${commonErrorDetailedMessage}`
+						`could not add label "${labelName}": ${commonErrorDetailedMessage}`,
 					);
 				} else {
 					throw new Error(`error adding "${labelName}": ${error}`);
 				}
 				return false;
-			}
+			},
 		);
 }
 
 async function removeLabelIfExists(
 	labelName: string,
 	issue: { number: number; labels: { nodes: Array<{ name: string }> } },
-	{ client }: { client: GitHub }
+	{ client }: { client: GitHub },
 ): Promise<boolean> {
 	const hasLabel =
 		issue.labels.nodes.find((labe) => {
@@ -289,7 +289,7 @@ async function removeLabelIfExists(
 		}) !== undefined;
 	if (!hasLabel) {
 		core.info(
-			`Issue #${issue.number} does not have label '${labelName}'. No need to remove.`
+			`Issue #${issue.number} does not have label '${labelName}'. No need to remove.`,
 		);
 		return false;
 	}
@@ -310,24 +310,24 @@ async function removeLabelIfExists(
 					error.message.endsWith(`Resource not accessible by integration`)
 				) {
 					core.warning(
-						`could not remove label "${labelName}": ${commonErrorDetailedMessage}`
+						`could not remove label "${labelName}": ${commonErrorDetailedMessage}`,
 					);
 				} else if (error.status !== 404) {
 					throw new Error(`error removing "${labelName}": ${error}`);
 				} else {
 					core.info(
-						`On #${issue.number} label "${labelName}" doesn't need to be removed since it doesn't exist on that issue.`
+						`On #${issue.number} label "${labelName}" doesn't need to be removed since it doesn't exist on that issue.`,
 					);
 				}
 				return false;
-			}
+			},
 		);
 }
 
 async function addComment(
 	comment: string,
 	{ number }: { number: number },
-	{ client }: { client: GitHub }
+	{ client }: { client: GitHub },
 ): Promise<void> {
 	try {
 		await client.rest.issues.createComment({
@@ -343,7 +343,7 @@ async function addComment(
 			error.message.endsWith(`Resource not accessible by integration`)
 		) {
 			core.warning(
-				`couldn't add comment "${comment}": ${commonErrorDetailedMessage}`
+				`couldn't add comment "${comment}": ${commonErrorDetailedMessage}`,
 			);
 		} else {
 			throw new Error(`error adding "${comment}": ${error}`);
