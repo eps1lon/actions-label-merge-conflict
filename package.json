@@ -3,7 +3,7 @@
 	"license": "MIT",
 	"main": "dist/index.js",
 	"private": true,
-	"version": "2.1.0",
+	"version": "3.0.0",
 	"scripts": {
 		"build": "ncc build sources/main.ts",
 		"format": "prettier \"**/*.{js,json,md,ts,yml}\" --ignore-path .eslintignore --write"
