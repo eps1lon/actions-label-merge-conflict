@@ -29831,8 +29831,8 @@ query openPullRequests($owner: String!, $repo: String!, $after: String, $baseRef
  * Assumes that the label exists
  * @returns `true` if the label was added, `false` otherwise (e.g. when it already exists)
  */
-function addLabelIfNotExists(labelName, issue, { client }) {
-    return __awaiter(this, void 0, void 0, function* () {
+function addLabelIfNotExists(labelName_1, issue_1, _a) {
+    return __awaiter(this, arguments, void 0, function* (labelName, issue, { client }) {
         core.debug(JSON.stringify(issue, null, 2));
         const hasLabel = issue.labels.nodes.find((labe) => {
             return labe.name === labelName;
@@ -29861,8 +29861,8 @@ function addLabelIfNotExists(labelName, issue, { client }) {
         });
     });
 }
-function removeLabelIfExists(labelName, issue, { client }) {
-    return __awaiter(this, void 0, void 0, function* () {
+function removeLabelIfExists(labelName_1, issue_1, _a) {
+    return __awaiter(this, arguments, void 0, function* (labelName, issue, { client }) {
         const hasLabel = issue.labels.nodes.find((labe) => {
             return labe.name === labelName;
         }) !== undefined;
@@ -29893,8 +29893,8 @@ function removeLabelIfExists(labelName, issue, { client }) {
         });
     });
 }
-function addComment(comment, { number }, { client }) {
-    return __awaiter(this, void 0, void 0, function* () {
+function addComment(comment_1, _a, _b) {
+    return __awaiter(this, arguments, void 0, function* (comment, { number }, { client }) {
         try {
             yield client.rest.issues.createComment({
                 owner: github.context.repo.owner,
