@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.0
+
+- Update to node20 ([#115](https://github.com/eps1lon/actions-label-merge-conflict/pull/115))
+
 ## 2.1.0
 
 - Address set-output deprecation ([#92](https://github.com/eps1lon/actions-label-merge-conflict/pull/92) by @NotMyFault)
