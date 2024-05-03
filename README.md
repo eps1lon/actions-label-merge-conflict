@@ -47,7 +47,7 @@ This actions achieve this with minimal noise (no comment bloat) by adding a labe
 
 ### `dirtyLabel`
 
-**Required** The name of the label that should be added once a PR has merge conflicts.
+**Required** The name of the label that should be added once a PR has merge conflicts. This label is removed once a PR becomes mergable again.
 
 ### `repoToken`
 
