@@ -307,7 +307,7 @@ async function removeLabelIfExists(
 				if (
 					(error.status === 403 || error.status === 404) &&
 					continueOnMissingPermissions() &&
-					error.message.endsWith(`Resource not accessible by integration`)
+					error.message.includes(`Resource not accessible by integration`)
 				) {
 					core.warning(
 						`could not remove label "${labelName}": ${commonErrorDetailedMessage}`,

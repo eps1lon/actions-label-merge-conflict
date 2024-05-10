@@ -29880,7 +29880,7 @@ function removeLabelIfExists(labelName_1, issue_1, _a) {
             .then(() => true, (error) => {
             if ((error.status === 403 || error.status === 404) &&
                 continueOnMissingPermissions() &&
-                error.message.endsWith(`Resource not accessible by integration`)) {
+                error.message.includes(`Resource not accessible by integration`)) {
                 core.warning(`could not remove label "${labelName}": ${commonErrorDetailedMessage}`);
             }
             else if (error.status !== 404) {
