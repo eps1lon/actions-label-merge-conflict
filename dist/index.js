@@ -29851,7 +29851,7 @@ function addLabelIfNotExists(labelName_1, issue_1, _a) {
             .then(() => true, (error) => {
             if ((error.status === 403 || error.status === 404) &&
                 continueOnMissingPermissions() &&
-                error.message.endsWith(`Resource not accessible by integration`)) {
+                error.message.includes(`Resource not accessible by integration`)) {
                 core.warning(`could not add label "${labelName}": ${commonErrorDetailedMessage}`);
             }
             else {
@@ -29906,7 +29906,7 @@ function addComment(comment_1, _a, _b) {
         catch (error) {
             if ((error.status === 403 || error.status === 404) &&
                 continueOnMissingPermissions() &&
-                error.message.endsWith(`Resource not accessible by integration`)) {
+                error.message.includes(`Resource not accessible by integration`)) {
                 core.warning(`couldn't add comment "${comment}": ${commonErrorDetailedMessage}`);
             }
             else {

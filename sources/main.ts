@@ -265,7 +265,7 @@ async function addLabelIfNotExists(
 				if (
 					(error.status === 403 || error.status === 404) &&
 					continueOnMissingPermissions() &&
-					error.message.endsWith(`Resource not accessible by integration`)
+					error.message.includes(`Resource not accessible by integration`)
 				) {
 					core.warning(
 						`could not add label "${labelName}": ${commonErrorDetailedMessage}`,
@@ -340,7 +340,7 @@ async function addComment(
 		if (
 			(error.status === 403 || error.status === 404) &&
 			continueOnMissingPermissions() &&
-			error.message.endsWith(`Resource not accessible by integration`)
+			error.message.includes(`Resource not accessible by integration`)
 		) {
 			core.warning(
 				`couldn't add comment "${comment}": ${commonErrorDetailedMessage}`,
