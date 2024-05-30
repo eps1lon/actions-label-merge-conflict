@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.2
+
+- Handle error when label is not available (part 2) ([#126](https://github.com/eps1lon/actions-label-merge-conflict/pull/126))
+
+## 3.0.1
+
+- Handle error when label is not available ([#123](https://github.com/eps1lon/actions-label-merge-conflict/pull/123))
+
 ## 3.0.0
 
 - Update to node20 ([#115](https://github.com/eps1lon/actions-label-merge-conflict/pull/115))
