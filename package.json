@@ -12,7 +12,7 @@
 		"@actions/core": "1.10.1",
 		"@actions/github": "6.0.0",
 		"@types/node": "^20.11.30",
-		"@vercel/ncc": "0.38.1",
+		"@vercel/ncc": "0.38.3",
 		"prettier": "3.2.5",
 		"typescript": "5.5.3"
 	},
