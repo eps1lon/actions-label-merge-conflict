@@ -31,6 +31,7 @@ jobs:
       # tried to use https://github.community/t5/GitHub-Actions/Usage-of-expressions-and-contexts-in-uses-clause/m-p/39507/highlight/false#M3837
       # but doesn't seem to work
       - name: Test (PR)
+        id: test-pr
         # Add your repository and branch here to test your changes
         # e.g. eps1lon/actions-label-merge-conflict@feat/retry-unknown
         uses: ./
@@ -42,7 +43,10 @@ jobs:
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
           commentOnDirty: "This pull request has conflicts, please resolve those before we can evaluate the pull request."
           commentOnClean: "Conflicts have been resolved. A maintainer will review the pull request shortly."
+      - name: Check output (PR)
+        run: echo "Generated output ${{ steps.test-pr.outputs.prDirtyStatuses }}"
       - name: Test
+        id: test-main
         uses: eps1lon/actions-label-merge-conflict@main
         with:
           # pull_requests don't have access to secrets
@@ -52,3 +56,5 @@ jobs:
           repoToken: "${{ secrets.GITHUB_TOKEN }}"
           commentOnDirty: "This pull request has conflicts, please resolve those before we can evaluate the pull request."
           commentOnClean: "Conflicts have been resolved. A maintainer will review the pull request shortly."
+      - name: Check output
+        run: echo "Generated output ${{ steps.test-main.outputs.prDirtyStatuses }}"
