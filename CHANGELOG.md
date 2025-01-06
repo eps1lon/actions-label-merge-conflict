@@ -2,6 +2,10 @@
 
 ## 3.0.2
 
+- Ensure `outputs` is populated ([#136](https://github.com/eps1lon/actions-label-merge-conflict/pull/136))
+
+## 3.0.2
+
 - Handle error when label is not available (part 2) ([#126](https://github.com/eps1lon/actions-label-merge-conflict/pull/126))
 
 ## 3.0.1
