@@ -1,6 +1,10 @@
 # Changelog
 
-## 3.0.2
+## 3.1.0
+
+- Update Node.js to 24 ([#152](https://github.com/eps1lon/actions-label-merge-conflict/pull/152))
+
+## 3.0.3
 
 - Ensure `outputs` is populated ([#136](https://github.com/eps1lon/actions-label-merge-conflict/pull/136))
 
