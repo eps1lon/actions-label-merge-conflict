@@ -23,8 +23,7 @@ jobs:
   main:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: write
+      pull-requests: write # To add and remove labels and comments on a PR.
     steps:
       - name: check if prs are dirty
         uses: eps1lon/actions-label-merge-conflict@v3
