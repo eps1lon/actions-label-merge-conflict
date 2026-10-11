@@ -9,8 +9,10 @@ This action adds a given label to Pull Requests that have merge conflicts and re
 ```yaml
 name: "Maintenance"
 on:
-  # So that PRs touching the same files as the push are updated
+  # So that PRs touching the same files as the push to the default branch are updated
   push:
+    branches:
+      - main
   # So that the `dirtyLabel` is removed if conflicts are resolve
   # We recommend `pull_request_target` so that github secrets are available.
   # In `pull_request` we wouldn't be able to change labels of fork PRs
